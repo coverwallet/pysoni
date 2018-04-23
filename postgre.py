@@ -107,19 +107,34 @@ class Postgre(object):
             cur.close()
             conn.close()
 
-    def execute_batch_inserts(self, insert_rows, tablename, batch_size=1000):
+    def execute_batch_inserts(self, insert_rows, tablename, batch_size=1000, columns=None):
         """This method it is created to perform batch insert over postgresql.
         insert_rows has to be an iterable
         table_name is the table where you will insert the data
-        batch_size is the amount of rows you'll insert in a DB commit. Be aware that having a huge value here may affect your DB performance"""
+        batch_size is the amount of rows you'll insert in a DB commit. Be aware that having a huge value here may affect your DB performance
+
+        You can also update only specific columns. To do that, columns has to be either a list, tuple with the column names
+        or a string where the columns names are comma-separated"""
         conn = self.connection()
         cur = conn.cursor()
         remaining_rows = self.format_insert(insert_rows)
 
+        if columns:
+            if type(columns) in (list, tuple):
+                columns_to_insert = ','.join(str(i) for i in columns)
+            elif type(columns) is str:
+                columns_to_insert = columns
+            else:
+                raise ValueError('Data format not correct')
+
+            insert_query = f'INSERT INTO {tablename} ({columns_to_insert}) VALUES %s'
+        else:
+            insert_query = f'INSERT INTO {tablename} VALUES %s'
+
         batch_rows, remaining_rows = remaining_rows[:batch_size], remaining_rows[batch_size:]
         try:
             while len(batch_rows) > 0:
-                execute_values(cur, 'INSERT INTO ' + tablename + ' VALUES %s', batch_rows)
+                execute_values(cur, insert_query, batch_rows)
                 batch_rows, remaining_rows = remaining_rows[:batch_size], remaining_rows[batch_size:]
                 conn.commit()
         except Exception as e:
@@ -128,33 +143,6 @@ class Postgre(object):
             cur.close()
             conn.close()
 
-
-    def execute_batch_inserts_specific_columns(self, insert_rows, tablename, columns, batch_size=1000):
-        """This method it is created to perform batch insert over postgresql."""
-        conn = self.connection()
-        cur = conn.cursor()
-        if type(columns) in (list, tuple):
-            insert_colums = ','.join(str(i) for i in columns)
-        elif type(columns) is str:
-            insert_colums = columns
-        else:
-            raise ValueError('Data format not correct')
-        insert = self.format_insert(insert_rows)
-        batch_insert, insert = insert[:batch_size], insert[batch_size:]
-        while len(batch_insert) > 0:
-            try:
-                execute_values(cur, 'INSERT INTO ' + tablename + ' ({0}) '.format(insert_colums)
-                               + ' VALUES %s', batch_insert)
-                batch_insert, insert = insert[:batch_size], insert[batch_size:]
-                conn.commit()
-            except Exception as e:
-                cur.close()
-                conn.close()
-                print(e)
-
-        conn.commit()
-        cur.close()
-        conn.close()
 
     def execute_query(self, queryname, types=False, sql_script=None, path_sql_script=None):
         """This method it is perform to execute an sql query.

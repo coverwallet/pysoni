@@ -65,33 +65,47 @@ class Postgre(object):
             else:
                 break
 
-    def drop_tables(self, tables):
-        """This method it is perform to drop tables, please be careful."""
+    def drop_tables(self, tables_names, timesleep=2):
+        """This method it is perform to drop tables, please be careful.The tables_names arguments need to be a iterable"""
         conn = self.connection()
         cur = conn.cursor()
-        if type(tables) is str:
-            cur.execute('DROP TABLE "{0}";'.format(tables))
-        elif type(tables) is list and (type(tables[0]) is str or type(tables[0]) is tuple):
-            if type(tables[0]) is tuple:
-                tables = [str(table[0]) for table in [tables for tables in tables]]
-            for table in tables:
-                print(f"We delete the following table {table}.Interrupt the script before it's too late.")
-                sleep(2)
-                cur.execute(f'DROP TABLE "{table}";')
-            conn.commit()
-            print('Tables were successfully removed.')
+
+        table_type = type(tables_names)
+        table_sample = tables_names[0]
+        try:
+            if table_type in (list, tuple)  and (table_sample in (str,tuple,list)):
+                if type(table_sample) in (tuple,list):
+                    tables_names = [str(table_name[0]) for table_name in [table for table in tables_names]]
+                for table in tables_names:
+                    print(f"We delete the following table {table}.Interrupt the script before it's too late.")
+                    sleep(timesleep)
+                    cur.execute(f'DROP TABLE "{table}";')
+                conn.commit()
+                print('Tables were successfully removed.')
+            else:
+                raise ValueError("Data value not correct")
+        finally:
             cur.close()
             conn.close()
-        else:
-            raise ValueError("Data value not correct")
 
-    def drop_batch_tables(self, tablelist, timeout=True):
-        "This method it is perform to delete a batch of tables , please we aware."
-        if type(tablelist) in (list, tuple) and tablelist[0] is str:
-            drop_tables = ','.join(table for table in tablelist)
-            self.postgre_statement(f"DROP TABLES {drop_tables}", timesleep=timeout)
-        else:
-            raise TypeError("Tablelist parameter not correct, a list or tuple of strings is needed")
+    def drop_batch_tables(self, tables_names, use_timesleep=True):
+        """"This method it is perform to delete a batch of tables, please we aware.
+        The tables_names argument need to be an iterable of string"""
+        conn = self.connection()
+        cur = conn.cursor()
+
+        try:
+            table_type = type(tables_names)
+            table_sample = tables_names[0]
+            if table_type in (list, tuple) and table_sample is str:
+                drop_tables = ','.join(table for table in tables_names)
+                self.postgre_statement(f"DROP TABLES {drop_tables}", timesleep=use_timesleep)
+                conn.commit()
+            else:
+                raise TypeError("Tablelist parameter not correct, a list or tuple of strings is needed")
+        finally:
+            cur.close()
+            conn.close()
 
     def execute_batch_inserts(self, insert_rows, tablename, batch_size=1000):
         """This method it is created to perform batch insert over postgresql."""

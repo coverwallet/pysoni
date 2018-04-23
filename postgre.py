@@ -2,10 +2,8 @@ import psycopg2
 from psycopg2.extras import execute_values
 from time import sleep
 from pandas import DataFrame
-import asyncio
 import asyncpg
 from toolz import groupby
-
 
 class Postgre(object):
     """This class will contain special methods to perform over PostgreSQL.To create a class instance we need
@@ -20,14 +18,15 @@ class Postgre(object):
         self.password = password
 
     @staticmethod
-    def format_insert(insert):
+    def format_insert(data_to_insert):
         """This method it is perform to format the output python object into an admissible input for postgresql."""
-        if type(insert[0]) is list:
-            return [tuple(i) for i in insert]
-        elif type(insert[0]) is tuple:
-            return insert
-        elif type(insert[0]) is str:
-            return [tuple([string]) for string in insert]
+        data_type = type(data_to_insert[0])
+        if data_type is list:
+            return [tuple(i) for i in data_to_insert]
+        elif data_type is tuple:
+            return data_to_insert
+        elif data_type in (str,int,float):
+            return [tuple([string]) for string in data_to_insert]
         else:
             raise ValueError("Data value not correct")
 
@@ -35,11 +34,11 @@ class Postgre(object):
     def read_query(name, path=None):
         """This method it is perform to open an sql query return a python string."""
         if path is None:
-            file_lotacion = f"{path}{name}.sql"
+            file_location = f"{path}{name}.sql"
         else:
-            file_lotacion = f"{name}.sql"
+            file_location = f"{name}.sql"
 
-        with open(f'{file_lotacion}.sql', 'r') as query:
+        with open(f'{file_location}.sql', 'r') as query:
             return query.read()
 
     def connection(self):
@@ -47,33 +46,35 @@ class Postgre(object):
         return psycopg2.connect(dbname=self.dbname, user=self.user, password=self.password,
                                 host=self.host, port=self.port)
 
-    def delete_batch_rows(self, delete_rows, tablename, column, batchsize=1000, timeout=True):
-        """This method it is perform to delete rows in a batch from an specific table, please be careful."""
-        if type(delete_rows[0]) not in (str, int):
+    def delete_batch_rows(self, delete_batch, tablename, column, batch_size=1000, timeout=True):
+        """This method it is perform to delete rows in a batch from an specific table, please be careful.
+        This method it is think to reduce the amount of database connections"""
+        data_type = type(delete_batch[0])
+        if data_type not in (str, int):
             raise ValueError('Data format not correct')
 
-        delete, delete_rows = delete_rows[:batchsize], delete_rows[batchsize:]
-        rows_string = ','.join(f"'{i}'" for i in delete)
-        while len(delete) > 0:
-            self.postgre_statement("delete from {0} where {1} in ({2})".format(tablename, column, rows_string),
-                                   timesleep=timeout)
-            delete, delete_rows = delete_rows[:batchsize], delete_rows[batchsize:]
-            print("{0} rows left to delete".format(str(len(delete_rows))))
-            if len(delete) > 0:
-                rows_string = ','.join(f"'{i}'" for i in delete)
+        delete_rows, remaining_rows = delete_batch[:batch_size], delete_batch[batch_size:]
+        rows_string = ','.join(f"'{register}'" for register in delete_rows)
+        while len(delete_rows) > 0:
+            self.postgre_statement(f"delete from {tablename} where {column} in ({rows_string})",timesleep=timeout)
+            delete_rows, delete_rows = remaining_rows[:batch_size], remaining_rows[batch_size:]
+            remaining_rows_amount = str(len(delete_rows))
+            print(f"{remaining_rows_amount} rows left to delete")
+            if len(delete_rows) > 0:
+                rows_string = ','.join(f"'{register}'" for register in delete_rows)
             else:
                 break
 
-    def drop_tables(self, query):
+    def drop_tables(self, tables):
         """This method it is perform to drop tables, please be careful."""
         conn = self.connection()
         cur = conn.cursor()
-        if type(query) is str:
-            cur.execute('DROP TABLE "{0}";'.format(query))
-        elif type(query) is list and (type(query[0]) is str or type(query[0]) is tuple):
-            if type(query[0]) is tuple:
-                query = [str(table[0]) for table in [tables for tables in query]]
-            for table in query:
+        if type(tables) is str:
+            cur.execute('DROP TABLE "{0}";'.format(tables))
+        elif type(tables) is list and (type(tables[0]) is str or type(tables[0]) is tuple):
+            if type(tables[0]) is tuple:
+                tables = [str(table[0]) for table in [tables for tables in tables]]
+            for table in tables:
                 print(f"We delete the following table {table}.Interrupt the script before it's too late.")
                 sleep(2)
                 cur.execute(f'DROP TABLE "{table}";')
@@ -385,10 +386,10 @@ class PostgreAdvancedMethods(Postgre):
         """This method it is perform to update a table, following the delete and insert pattern to avoid unnecesary
         index creation."""
         if delete_batch_size is False:
-            self.delete_batch_rows(delete_list, tablename=tablename, column=merge_key, batchsize=insert_batch_size,
+            self.delete_batch_rows(delete_list, tablename=tablename, column=merge_key, batch_size=insert_batch_size,
                                    timeout=False)
             self.execute_batch_inserts(insert_list, tablename=tablename, batch_size=insert_batch_size)
         else:
-            self.delete_batch_rows(delete_list, tablename=tablename, column=merge_key, batchsize=delete_batch_size,
+            self.delete_batch_rows(delete_list, tablename=tablename, column=merge_key, batch_size=delete_batch_size,
                                    timeout=False)
             self.execute_batch_inserts(insert_list, tablename=tablename, batch_size=insert_batch_size)

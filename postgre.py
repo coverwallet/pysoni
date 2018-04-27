@@ -22,7 +22,7 @@ class Postgre(object):
         """This method it is perform to format the output python object into an admissible input for postgresql."""
         data_type = type(data_to_insert[0])
         if data_type is list:
-            return [tuple(i) for i in data_to_insert]
+            return [tuple(insert_element) for insert_element in data_to_insert]
         elif data_type is tuple:
             return data_to_insert
         elif data_type in (str,int,float):
@@ -33,7 +33,7 @@ class Postgre(object):
     @staticmethod
     def read_query(name, path=None):
         """This method it is perform to open an sql query return a python string."""
-        if path is None:
+        if path:
             file_location = f"{path}{name}.sql"
         else:
             file_location = f"{name}.sql"
@@ -111,7 +111,8 @@ class Postgre(object):
         """This method it is created to perform batch insert over postgresql.
         insert_rows has to be an iterable
         table_name is the table where you will insert the data
-        batch_size is the amount of rows you'll insert in a DB commit. Be aware that having a huge value here may affect your DB performance
+        batch_size is the amount of rows you'll insert in a DB commit. 
+        Be aware that having a huge value here may affect your DB performance
         You can also update only specific columns. To do that, columns has to be either a list, tuple with the column names
         or a string where the columns names are comma-separated"""
         conn = self.connection()
@@ -253,7 +254,7 @@ class Postgre(object):
                 list_of_dict.append([{column: register} for register, column in zip(row, columns)])
             return list_of_dict
 
-    def postgre_to_dict_list(self, query, types=False, sql_script=False, path_sql_script=False):
+    def postgre_to_dict_list(self, query, types=False, sql_script=None, path_sql_script=None):
         """This method it is perform to execute an sql query and it would retrieve a list of lists of diccionaries.
         If we want to make dynamic queries the attributes should be pass as the following example
         f"select * from hoteles where city='Madrid'"""
@@ -280,7 +281,7 @@ class Postgre(object):
                     list_of_dict.append(row_dict)
                     return list_of_dict
 
-    def postgre_to_tuple(self, query, sql_script=False, path_sql_script=False):
+    def postgre_to_tuple(self, query, sql_script=None, path_sql_script=None):
         """This method it is perform to execute an sql query and it would retrieve a list of tuples.
         If we want to make dynamic queries the attributes should be pass as the following example
         f"select * from hoteles where city='Madrid'")"""

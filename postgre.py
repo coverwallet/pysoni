@@ -176,23 +176,23 @@ class Postgre(object):
 
     def get_schema(self, schema, metadata=False):
         """This method it is perform to get all the schema information from postgresql."""
-        if metadata is False:
+        if metadata:
+            format_tables = self.postgre_to_tuple(f"select table_name,column_name,data_type "
+                                                  f"from information_schema.columns where "
+                                                  f"table_schema='{schema}'")   
+        else:
             format_tables = self.postgre_to_tuple(f"select table_name,column_name,data_type "
                                                   f"from information_schema.columns where "
                                                   f"table_schema='{schema}' and "
                                                   f"table_name not like 'pg_%'")
-        else:
-            format_tables = self.postgre_to_tuple(f"select table_name,column_name,data_type "
-                                                  f"from information_schema.columns where "
-                                                  f"table_schema='{schema}'")
 
         if len(format_tables) > 0:
-            final_list = [{'tablename': i[0], 'columname': i[1], 'data_type': i[2]} for i in format_tables]
-            group_results = groupby('tablename', final_list)
-            final_results = []
-            for key, value in group_results.items():
-                final_results.append({key: {i['columname']: i['data_type'] for i in value}})
-            return final_results
+            tables_info = [{'tablename': table[0], 'columname': table[1], 'data_type': table[2]} for table in format_tables]
+            group_results = groupby('tablename', tables_info)
+            tables = []
+            for table_name, table_metadata in group_results.items():
+                tables.append({table_name: {column['columname']: column['data_type'] for column in table_metadata}})
+            return tables
         else:
             raise ValueError("This schema it is empty.")
 
@@ -207,19 +207,19 @@ class Postgre(object):
                 print("Statement execute succesfully")
                 conn.commit()
                 cur.close()
-                return print("Statement run succesfully.")
+                print("Statement run succesfully")
             else:
                 cur.execute(statement)
                 print("Statement execute succesfully, 10 seconds before")
                 sleep(10)
                 conn.commit()
                 cur.close()
-                return print("Statement run succesfully.")
-        except psycopg2.Error as e:
+                print("Statement run succesfully.")
+        finally:
+            # we close the cursor and connection.
             cur.close()
             conn.close()
-            raise psycopg2.Error("We found the following issue: {0}"
-                                 .format(e))
+            
 
     def postgre_to_dataframe(self, query):
         """This method it is perform to execute an sql query and it would retrieve a pandas Dataframe.

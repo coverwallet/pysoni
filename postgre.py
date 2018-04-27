@@ -112,7 +112,6 @@ class Postgre(object):
         insert_rows has to be an iterable
         table_name is the table where you will insert the data
         batch_size is the amount of rows you'll insert in a DB commit. Be aware that having a huge value here may affect your DB performance
-
         You can also update only specific columns. To do that, columns has to be either a list, tuple with the column names
         or a string where the columns names are comma-separated"""
         conn = self.connection()
@@ -137,52 +136,43 @@ class Postgre(object):
                 execute_values(cur, insert_query, batch_rows)
                 batch_rows, remaining_rows = remaining_rows[:batch_size], remaining_rows[batch_size:]
                 conn.commit()
-        except Exception as e:
-            print(e)
         finally:
             cur.close()
             conn.close()
 
 
-    def execute_query(self, queryname, types=False, sql_script=None, path_sql_script=None):
+    def execute_query(self, query, types=False, sql_script=None, path_sql_script=None):
         """This method it is perform to execute an sql query.
         If we want to make dynamic queries the attributes should be pass as the following example
-        select * from hoteles where city='{0}'".format('Madrid')"""
+        "select * from hoteles where city='{0}'".format('Madrid')"""
         conn = self.connection()
         cur = conn.cursor()
         try:
             if sql_script is None:
-                cur.execute(queryname)
+                cur.execute(query)
                 res = cur.fetchall()
             else:
-                cur.execute(self.read_query(queryname, path_sql_script))
+                cur.execute(self.read_query(sql_script, path_sql_script))
                 res = cur.fetchall()
             # we get the information about the columns names.
-            columns_names = [i[0] for i in cur.description]
+            columns_names = [column_metadata[0] for column_metadata in cur.description]
             if types is False:
                 query_results = {'results': res, 'keys': columns_names}
-                # we close the cursor and connection.
-                cur.close()
-                conn.close()
                 return query_results
             else:
-                types = [i[1] for i in cur.description]
-                type_string = ','.join(str(i) for i in types)
-                cur.execute("select pg_type.oid, pg_type.typname from pg_type where pg_type.oid in ({0})".
-                            format(type_string))
-                type_res = cur.fetchall()
-                type_res_dict = {i[0]: i[1] for i in type_res}
-                type_list = [type_res_dict.get(i, 'text') for i in types]
-                query_results = {'results': res, 'keys': columns_names, 'types': type_list}
-                # we close the cursor and connection.
-                cur.close()
-                conn.close()
+                data_types_pid = [column_metadata[1] for column_metadata in cur.description]
+                cur.execute(f"select pg_type.oid, pg_type.typname from pg_type where pg_type.oid "
+                            f"in ({','.join(str(i) for i in data_types_pid)})")
+                
+                data_types_information = {type_information[0]: type_information[1] 
+                                        for type_information in cur.fetchall()}
+                data_types_names = [data_types_information.get(column_type, 'text') for column_type in data_types_information]
+                query_results = {'results': res, 'keys': columns_names, 'types': data_types_names}
                 return query_results
-        except psycopg2.Error as e:
+        finally:
+            # we close the cursor and connection.
             cur.close()
             conn.close()
-            raise psycopg2.Error("We found the following issue: {0}"
-                                 .format(e))
 
     def get_schema(self, schema, metadata=False):
         """This method it is perform to get all the schema information from postgresql."""

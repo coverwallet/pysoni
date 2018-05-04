@@ -228,30 +228,26 @@ class Postgre(object):
         results = self.execute_query(query)
         return DataFrame.from_records(results['results'], columns=results['keys'])
 
-    def postgre_to_dict(self, query, types=False, sql_script=None, path_sql_script=None):
+    def postgre_to_dict(self, query, include_types=False, sql_script=None, path_sql_script=None):
         """This method it is perform to execute an sql query and it would retrieve a list of lists of diccionaries.
         If we want to make dynamic queries the attributes should be pass as the following example
         "select * from hoteles where city='{0}'".format('Madrid')"""
-        if types:
-            results = self.execute_query(query, types=True, sql_script=sql_script, path_sql_script=path_sql_script)
-            columns = results['keys']
-            rows = results['results']
+        results = self.execute_query(query, types=include_types, sql_script=sql_script, path_sql_script=path_sql_script)
+
+        columns = results['keys']
+        rows = results['results']
+        list_of_dict = []
+
+        if include_types:
             types = results['types']
-            list_of_dict = []
             for row in rows:
                 list_of_dict.append([{column: {'value': value, 'type': type_}} for value, column, type_
                                      in zip(row, columns, types)])
-            return list_of_dict
-            
         else:
-            results = self.execute_query(query, sql_script=sql_script, path_sql_script=path_sql_script)
-            columns = results['keys']
-            rows = results['results']
-            list_of_dict = []
-
             for row in rows:
                 list_of_dict.append([{column: register} for register, column in zip(row, columns)])
-            return list_of_dict
+
+        return list_of_dict
 
     def postgre_to_dict_list(self, query, types=False, sql_script=False, path_sql_script=False):
         """This method it is perform to execute an sql query and it would retrieve a list of lists of diccionaries.

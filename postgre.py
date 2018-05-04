@@ -249,32 +249,30 @@ class Postgre(object):
 
         return list_of_dict
 
-    def postgre_to_dict_list(self, query, types=False, sql_script=False, path_sql_script=False):
+    def postgre_to_dict_list(self, query, include_types=False, sql_script=False, path_sql_script=False):
         """This method it is perform to execute an sql query and it would retrieve a list of lists of diccionaries.
         If we want to make dynamic queries the attributes should be pass as the following example
         f"select * from hoteles where city='Madrid'"""
-        if types is False:
-            results = self.execute_query(query, types=True, sql_script=sql_script, path_sql_script=path_sql_script)
-            columns = results['keys']
-            rows = results['results']
+        results = self.execute_query(query, types=include_types, sql_script=sql_script, path_sql_script=path_sql_script)
+
+        columns = results['keys']
+        rows = results['results']
+        list_of_dict = []
+
+        if include_types:
             types = results['types']
-            list_of_dict = []
             for row in rows:
                 for value, column, type_ in zip(row, columns, types):
-                    list_of_dict.append({column: {'value': value, 'type': type}})
-            return list_of_dict
-            
+                    list_of_dict.append({column: {'value': value, 'type': type_}})
+
         else:
-            results = self.execute_query(query, sql_script=sql_script, path_sql_script=path_sql_script)
-            columns = results['keys']
-            rows = results['results']
-            list_of_dict = []
             for row in rows:
                 row_dict = {}
                 for register, column in zip(row, columns):
                     row_dict.update({column: register})
                     list_of_dict.append(row_dict)
-                    return list_of_dict
+
+        return list_of_dict
 
     def postgre_to_tuple(self, query, sql_script=False, path_sql_script=False):
         """This method it is perform to execute an sql query and it would retrieve a list of tuples.

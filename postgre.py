@@ -249,7 +249,7 @@ class Postgre(object):
 
         return list_of_dict
 
-    def postgre_to_dict_list(self, query, include_types=False, sql_script=False, path_sql_script=False):
+    def postgre_to_dict_list(self, query, include_types=False, sql_script=None, path_sql_script=None):
         """This method it is perform to execute an sql query and it would retrieve a list of lists of diccionaries.
         If we want to make dynamic queries the attributes should be pass as the following example
         f"select * from hoteles where city='Madrid'"""
@@ -274,7 +274,7 @@ class Postgre(object):
 
         return list_of_dict
 
-    def postgre_to_tuple(self, query, sql_script=False, path_sql_script=False):
+    def postgre_to_tuple(self, query, sql_script=None, path_sql_script=None):
         """This method it is perform to execute an sql query and it would retrieve a list of tuples.
         If we want to make dynamic queries the attributes should be pass as the following example
         f"select * from hoteles where city='Madrid'")"""

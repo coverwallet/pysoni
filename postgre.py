@@ -302,34 +302,29 @@ class Postgre(object):
 
         return "fields updated correctly"
 
-    def update_fields_execute_values(self, tablename, field, values_tuple, batch_size):
+    def update_fields_execute_values(self, tablename, field_name, values_update, batch_size):
         """This method it is perform to create massive updates using execute_values method"""
-        if len(values_tuple[0]) == 2 and type(values_tuple[0]) in (tuple, list) and type(values_tuple[0][1]) is str:
-            pass
-        else:
+        value_sample = values_update[0]
+        is_correct_len = len(value_sample) == 2
+        is_iterable = type(value_sample) in (tuple, list)
+        is_new_data_format_correct = type(value_sample[1]) is str
+        if not is_correct_len or not is_iterable or not is_new_data_format_correct:
             raise TypeError("Value error value tuple argument need to be a list of tuples of longitude 2 where "
                             "each element of the tuple need to be a string.")
+
         conn = self.connection()
-        # we create a cursor
         cur = conn.cursor()
+        insert_query = f"UPDATE {tablename} SET {field_name} = data.new_value FROM (VALUES %s) " \
+                       f"AS data (old_value,new_value) WHERE {field_name} = data.old_value"
         try:
-            batch_update, update = values_tuple[:batch_size], values_tuple[batch_size:]
+            batch_rows, remaining_rows = values_update[:batch_size], values_update[batch_size:]
             while len(batch_update) > 0:
-                try:
-                    execute_values(cur, "UPDATE " + tablename + " SET " + field + " = data.new_value FROM (VALUES %s) "
-                                                                                  "AS data (old_value, new_value) " \
-                                                                                  "WHERE " + field + " = data.old_value",
-                                   batch_update
-                                   )
-                    batch_update, update = update[:batch_size], update[batch_size:]
-                    conn.commit()
-                except Exception as e:
-                    print(e)
-                    break
-            print("fields updated correctly")
-        except:
-            cur.close()
+                execute_values(cur, insert_query,batch_rows)
+                batch_rows, remaining_rows = remaining_rows[:batch_size], remaining_rows[batch_size:]
+            conn.commit()
+            print ("fields updated correctly")
         finally:
+            cur.close()
             conn.close()
 
 
@@ -363,21 +358,16 @@ class PostgreAdvancedMethods(Postgre):
 
     def __init__(self, port, host, dbname, user, password):
         super().__init__(port, host, dbname, user, password)
-        self.port = port
-        self.host = host
-        self.dbname = dbname
-        self.user = user
-        self.password = password
 
-    def update_table(self, tablename, merge_key, delete_list, insert_list,insert_batch_size=5000,
+    def update_table(self, table_name, merge_key, delete_list, insert_list,insert_batch_size=5000,
                      delete_batch_size=False):
         """This method it is perform to update a table, following the delete and insert pattern to avoid unnecesary
         index creation."""
-        if delete_batch_size is False:
-            self.delete_batch_rows(delete_list, tablename=tablename, column=merge_key, batch_size=insert_batch_size,
+        if delete_batch_size:
+            self.delete_batch_rows(delete_list, tablename=table_name, column=merge_key, batch_size=delete_batch_size,
                                    timeout=False)
-            self.execute_batch_inserts(insert_list, tablename=tablename, batch_size=insert_batch_size)
+            self.execute_batch_inserts(insert_list, tablename=table_name, batch_size=insert_batch_size)
         else:
-            self.delete_batch_rows(delete_list, tablename=tablename, column=merge_key, batch_size=delete_batch_size,
+            self.delete_batch_rows(delete_list, tablename=table_name, column=merge_key, batch_size=insert_batch_size,
                                    timeout=False)
-            self.execute_batch_inserts(insert_list, tablename=tablename, batch_size=insert_batch_size)
+            self.execute_batch_inserts(insert_list, tablename=table_name, batch_size=insert_batch_size)

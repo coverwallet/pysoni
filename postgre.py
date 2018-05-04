@@ -285,24 +285,22 @@ class Postgre(object):
     def update_fields(self, tablename, field, values, timeout=True, multiproccesing=False):
         """This method it is perform to create massive updates over a table, you could use the multiprocessing flag to
         open parallel connections."""
-        if multiproccesing is False:
-            if type(values) != (list, tuple) and len(values[0]) != 2:
-                raise TypeError("Values argument need to be a list or tuple of lists or tuples first element"
-                                "old value second element new value")
-            else:
-                pass
+        values_type = type(values)
+        values_sample = values[0]
+
+        if values_type not in (list, tuple) and len(values_sample) != 2:
+            raise TypeError("Values argument need to be a list or tuple of lists or tuples first element"
+                            "old value second element new value")
+
+        if multiproccesing:
+            self.postgre_statement(f"UPDATE {tablename} SET {field} = '{values[1]}' WHERE {field}='{values[0]}'",
+                                   timesleep=timeout)
+        else:
             for record in values:
                 self.postgre_statement(f"UPDATE {tablename} SET {field} = '{record[1]}' WHERE {field}='{record[0]}'",
                                        timesleep=timeout)
-            return "fields updated correctly"
-        else:
-            if type(values) != (list, tuple) and len(values) != 2:
-                raise TypeError("Values argument need to be a list or tuple of lists or tuples first element"
-                                "old value second element new value")
-            else:
-                self.postgre_statement(f"UPDATE {tablename} SET {field} = '{values[1]}' WHERE {field}='{values[0]}'",
-                                       timesleep=timeout)
-            return "fields updated correctly"
+
+        return "fields updated correctly"
 
     def update_fields_execute_values(self, tablename, field, values_tuple, batch_size):
         """This method it is perform to create massive updates using execute_values method"""

@@ -22,7 +22,7 @@ class Postgre(object):
         """This method it is perform to format the output python object into an admissible input for postgresql."""
         data_type = type(data_to_insert[0])
         if data_type is list:
-            return [tuple(insert_element) for insert_element in data_to_insert]
+            return [tuple(i) for i in data_to_insert]
         elif data_type is tuple:
             return data_to_insert
         elif data_type in (str,int,float):
@@ -33,7 +33,7 @@ class Postgre(object):
     @staticmethod
     def read_query(name, path=None):
         """This method it is perform to open an sql query return a python string."""
-        if path:
+        if path is None:
             file_location = f"{path}{name}.sql"
         else:
             file_location = f"{name}.sql"
@@ -111,8 +111,7 @@ class Postgre(object):
         """This method it is created to perform batch insert over postgresql.
         insert_rows has to be an iterable
         table_name is the table where you will insert the data
-        batch_size is the amount of rows you'll insert in a DB commit. 
-        Be aware that having a huge value here may affect your DB performance
+        batch_size is the amount of rows you'll insert in a DB commit. Be aware that having a huge value here may affect your DB performance
         You can also update only specific columns. To do that, columns has to be either a list, tuple with the column names
         or a string where the columns names are comma-separated"""
         conn = self.connection()
@@ -229,57 +228,51 @@ class Postgre(object):
         results = self.execute_query(query)
         return DataFrame.from_records(results['results'], columns=results['keys'])
 
-    def postgre_to_dict(self, query, types=False, sql_script=None, path_sql_script=None):
+    def postgre_to_dict(self, query, include_types=False, sql_script=None, path_sql_script=None):
         """This method it is perform to execute an sql query and it would retrieve a list of lists of diccionaries.
         If we want to make dynamic queries the attributes should be pass as the following example
         "select * from hoteles where city='{0}'".format('Madrid')"""
-        if types:
-            results = self.execute_query(query, types=True, sql_script=sql_script, path_sql_script=path_sql_script)
-            columns = results['keys']
-            rows = results['results']
+        results = self.execute_query(query, types=include_types, sql_script=sql_script, path_sql_script=path_sql_script)
+
+        columns = results['keys']
+        rows = results['results']
+        list_of_dict = []
+
+        if include_types:
             types = results['types']
-            list_of_dict = []
             for row in rows:
                 list_of_dict.append([{column: {'value': value, 'type': type_}} for value, column, type_
                                      in zip(row, columns, types)])
-            return list_of_dict
-            
         else:
-            results = self.execute_query(query, sql_script=sql_script, path_sql_script=path_sql_script)
-            columns = results['keys']
-            rows = results['results']
-            list_of_dict = []
-
             for row in rows:
                 list_of_dict.append([{column: register} for register, column in zip(row, columns)])
-            return list_of_dict
 
-    def postgre_to_dict_list(self, query, types=False, sql_script=None, path_sql_script=None):
+        return list_of_dict
+
+    def postgre_to_dict_list(self, query, include_types=False, sql_script=None, path_sql_script=None):
         """This method it is perform to execute an sql query and it would retrieve a list of lists of diccionaries.
         If we want to make dynamic queries the attributes should be pass as the following example
         f"select * from hoteles where city='Madrid'"""
-        if types is False:
-            results = self.execute_query(query, types=True, sql_script=sql_script, path_sql_script=path_sql_script)
-            columns = results['keys']
-            rows = results['results']
+        results = self.execute_query(query, types=include_types, sql_script=sql_script, path_sql_script=path_sql_script)
+
+        columns = results['keys']
+        rows = results['results']
+        list_of_dict = []
+
+        if include_types:
             types = results['types']
-            list_of_dict = []
             for row in rows:
                 for value, column, type_ in zip(row, columns, types):
-                    list_of_dict.append({column: {'value': value, 'type': type}})
-            return list_of_dict
-            
+                    list_of_dict.append({column: {'value': value, 'type': type_}})
+
         else:
-            results = self.execute_query(query, sql_script=sql_script, path_sql_script=path_sql_script)
-            columns = results['keys']
-            rows = results['results']
-            list_of_dict = []
             for row in rows:
                 row_dict = {}
                 for register, column in zip(row, columns):
                     row_dict.update({column: register})
                     list_of_dict.append(row_dict)
-                    return list_of_dict
+
+        return list_of_dict
 
     def postgre_to_tuple(self, query, sql_script=None, path_sql_script=None):
         """This method it is perform to execute an sql query and it would retrieve a list of tuples.
@@ -292,24 +285,22 @@ class Postgre(object):
     def update_fields(self, tablename, field, values, timeout=True, multiproccesing=False):
         """This method it is perform to create massive updates over a table, you could use the multiprocessing flag to
         open parallel connections."""
-        if multiproccesing is False:
-            if type(values) != (list, tuple) and len(values[0]) != 2:
-                raise TypeError("Values argument need to be a list or tuple of lists or tuples first element"
-                                "old value second element new value")
-            else:
-                pass
+        values_type = type(values)
+        values_sample = values[0]
+
+        if values_type not in (list, tuple) and len(values_sample) != 2:
+            raise TypeError("Values argument need to be a list or tuple of lists or tuples first element"
+                            "old value second element new value")
+
+        if multiproccesing:
+            self.postgre_statement(f"UPDATE {tablename} SET {field} = '{values[1]}' WHERE {field}='{values[0]}'",
+                                   timesleep=timeout)
+        else:
             for record in values:
                 self.postgre_statement(f"UPDATE {tablename} SET {field} = '{record[1]}' WHERE {field}='{record[0]}'",
                                        timesleep=timeout)
-            return "fields updated correctly"
-        else:
-            if type(values) != (list, tuple) and len(values) != 2:
-                raise TypeError("Values argument need to be a list or tuple of lists or tuples first element"
-                                "old value second element new value")
-            else:
-                self.postgre_statement(f"UPDATE {tablename} SET {field} = '{values[1]}' WHERE {field}='{values[0]}'",
-                                       timesleep=timeout)
-            return "fields updated correctly"
+
+        return "fields updated correctly"
 
     def update_fields_execute_values(self, tablename, field, values_tuple, batch_size):
         """This method it is perform to create massive updates using execute_values method"""

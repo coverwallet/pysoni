@@ -19,7 +19,7 @@ class Postgre(object):
 
     @staticmethod
     def format_insert(data_to_insert):
-        """This method it is perform to format the output python object into an admissible input for postgresql."""
+        """Translates the python object output into and admisible postgresql input."""
         data_type = type(data_to_insert[0])
         if data_type is list:
             return [tuple(i) for i in data_to_insert]
@@ -32,8 +32,8 @@ class Postgre(object):
 
     @staticmethod
     def read_query(name, path=None):
-        """This method it is perform to open an sql query return a python string."""
-        if path is None:
+        """Transform a sql script into a python string."""
+        if path:
             file_location = f"{path}{name}.sql"
         else:
             file_location = f"{name}.sql"
@@ -47,8 +47,8 @@ class Postgre(object):
                                 host=self.host, port=self.port)
 
     def delete_batch_rows(self, delete_batch, tablename, column, batch_size=1000, timeout=True):
-        """This method it is perform to delete rows in a batch from an specific table, please be careful.
-        This method it is think to reduce the amount of database connections"""
+        """Delete rows from a table using batches when the table column match any value given in the deleted_batch
+        argument."""
         data_type = type(delete_batch[0])
         if data_type not in (str, int):
             raise ValueError('Data format not correct')
@@ -57,7 +57,7 @@ class Postgre(object):
         rows_string = ','.join(f"'{register}'" for register in delete_rows)
         while len(delete_rows) > 0:
             self.postgre_statement(f"delete from {tablename} where {column} in ({rows_string})",timesleep=timeout)
-            delete_rows, delete_rows = remaining_rows[:batch_size], remaining_rows[batch_size:]
+            delete_rows, remaining_rows = remaining_rows[:batch_size], remaining_rows[batch_size:]
             remaining_rows_amount = str(len(delete_rows))
             print(f"{remaining_rows_amount} rows left to delete")
             if len(delete_rows) > 0:
@@ -65,18 +65,19 @@ class Postgre(object):
             else:
                 break
 
-    def drop_tables(self, tables_names, timesleep=2):
-        """This method it is perform to drop tables, please be careful.The tables_names arguments need to be a iterable"""
+    def drop_tables(self, table_names, timesleep=2):
+        """Drop tables from a database sequentially, timesleep between transactions it is set up to 2 seconds by default,
+        all transactions are commited at the same time"""
         conn = self.connection()
         cur = conn.cursor()
 
-        table_type = type(tables_names)
-        table_sample = tables_names[0]
+        table_type = type(table_names)
+        sample = table_names[0]
         try:
-            if table_type in (list, tuple)  and (table_sample in (str,tuple,list)):
-                if type(table_sample) in (tuple,list):
-                    tables_names = [str(table_name[0]) for table_name in [table for table in tables_names]]
-                for table in tables_names:
+            if table_type in (list, tuple)  and (sample in (str,tuple,list)):
+                if type(sample) in (tuple,list):
+                    table_names = [str(name[0]) for name in [table for table in table_names]]
+                for table in table_names:
                     print(f"We delete the following table {table}.Interrupt the script before it's too late.")
                     sleep(timesleep)
                     cur.execute(f'DROP TABLE "{table}";')
@@ -89,8 +90,7 @@ class Postgre(object):
             conn.close()
 
     def drop_batch_tables(self, tables_names, use_timesleep=True):
-        """"This method it is perform to delete a batch of tables, please we aware.
-        The tables_names argument need to be an iterable of string"""
+        """"Drop a list of tables in batch , you can use the timesleep parameter before commiting"""
         conn = self.connection()
         cur = conn.cursor()
 
@@ -108,9 +108,8 @@ class Postgre(object):
             conn.close()
 
     def execute_batch_inserts(self, insert_rows, tablename, batch_size=1000, columns=None):
-        """This method it is created to perform batch insert over postgresql.
-        insert_rows has to be an iterable
-        table_name is the table where you will insert the data
+        """Execute batch inserts in different transactions over postgresql.
+        insert_rows has to be an iterable,table_name is the table where you will insert the data
         batch_size is the amount of rows you'll insert in a DB commit. Be aware that having a huge value here may affect your DB performance
         You can also update only specific columns. To do that, columns has to be either a list, tuple with the column names
         or a string where the columns names are comma-separated"""
@@ -142,9 +141,9 @@ class Postgre(object):
 
 
     def execute_query(self, query, types=False, sql_script=None, path_sql_script=None):
-        """This method it is perform to execute an sql query.
+        """Execute an postgresql query and return a diccionary.
         If we want to make dynamic queries the attributes should be pass as the following example
-        "select * from hoteles where city='{0}'".format('Madrid')"""
+        "select * from hotels where city='{0}'".format('London')"""
         conn = self.connection()
         cur = conn.cursor()
         try:
@@ -170,12 +169,12 @@ class Postgre(object):
                 query_results = {'results': res, 'keys': columns_names, 'types': data_types_names}
                 return query_results
         finally:
-            # we close the cursor and connection.
             cur.close()
             conn.close()
 
-    def get_schema(self, schema, metadata=False):
-        """This method it is perform to get all the schema information from postgresql."""
+    def get_schema(self, schema, metadata=None):
+        """Return a hash with the schema information of postgresql database. By default this method will not return
+        all the metadata tables that are allocated in the public schema"""
         if metadata:
             format_tables = self.postgre_to_tuple(f"select table_name,column_name,data_type "
                                                   f"from information_schema.columns where "
@@ -196,27 +195,28 @@ class Postgre(object):
         else:
             raise ValueError("This schema it is empty.")
 
-    def postgre_statement(self, statement, timesleep=True):
-        """This method it is perform to different postgres statements, rename columns, truncate tables etc."""
+    def postgre_statement(self, statement, timesleep=None):
+        """Method to perform  postgres transactions as an example rename columns, truncate tables etc. By default
+        the transaction it is commited after the execution if you want set up a sleep between both events use the
+        timesleep parameter"""
         conn = self.connection()
         # we create a cursor
         cur = conn.cursor()
         try:
-            if timesleep is False:
+            if timesleep:
                 cur.execute(statement)
                 print("Statement execute succesfully")
+                sleep(timesleep)
                 conn.commit()
                 cur.close()
                 print("Statement run succesfully")
             else:
                 cur.execute(statement)
                 print("Statement execute succesfully, 10 seconds before")
-                sleep(10)
                 conn.commit()
                 cur.close()
                 print("Statement run succesfully.")
         finally:
-            # we close the cursor and connection.
             cur.close()
             conn.close()
             
@@ -224,7 +224,7 @@ class Postgre(object):
     def postgre_to_dataframe(self, query):
         """This method it is perform to execute an sql query and it would retrieve a pandas Dataframe.
         If we want to make dynamic queries the attributes should be pass as the following example
-        "select * from hoteles where city='{0}'".format('Madrid')"""
+        "select * from hotels where city='{0}'".format('London')"""
         results = self.execute_query(query)
         return DataFrame.from_records(results['results'], columns=results['keys'])
 

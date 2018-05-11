@@ -2,7 +2,6 @@ import psycopg2
 from psycopg2.extras import execute_values
 from time import sleep
 from pandas import DataFrame
-import asyncio
 import asyncpg
 from toolz import groupby
 
@@ -20,16 +19,18 @@ class Postgre(object):
         self.password = password
 
     @staticmethod
-    def format_insert(insert):
-        """This method it is perform to format the output python object into an admissible input for postgresql."""
-        if type(insert[0]) is list:
-            return [tuple(i) for i in insert]
-        elif type(insert[0]) is tuple:
-            return insert
-        elif type(insert[0]) is str:
-            return [tuple([string]) for string in insert]
+    def format_insert(data_to_insert):
+        """Translates the python object output into an admisible postgresql input."""
+        data_type = type(data_to_insert[0])
+
+        if data_type is list:
+            return [tuple(value) for value in data_to_insert]
+        elif data_type is tuple:
+            return data_to_insert
+        elif data_type in (str, int, float):
+            return [tuple([value]) for value in data_to_insert]
         else:
-            raise ValueError("Data value not correct")
+            raise ValueError("Data type is not correct")
 
     @staticmethod
     def read_query(name, path=None):

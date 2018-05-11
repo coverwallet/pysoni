@@ -34,12 +34,12 @@ class Postgre(object):
     @staticmethod
     def read_query(name, path=None):
         """This method it is perform to open an sql query return a python string."""
-        if path is None:
-            file_lotacion = f"{path}{name}.sql"
+        if path:
+            filename = f"{path}{name}.sql"
         else:
-            file_lotacion = f"{name}.sql"
+            filename = f"{name}.sql"
 
-        with open(f'{file_lotacion}.sql', 'r') as query:
+        with open(filename, 'r') as query:
             return query.read()
 
     def connection(self):

@@ -228,7 +228,8 @@ class Postgre(object):
     def postgre_multiple_statements(self, statements, timesleep=None):
         """Method to execute multiple db transactions. The transactions are executed sequentially.
         A list of string with the transactions we want to execute should we passed on the statements argument.
-        All peding transaction will be commited."""
+        You can use a sleep between transactions with the timesleep parameter in this way you will we able to follow up,
+        wich transaction it is excuted.All peding transaction will be commited before any expection it is raised."""
         statement_type = type(statements)
         sample = statements[randrange(0, len(statements))]
         if statement_type is list and type(sample) is str:
@@ -256,6 +257,7 @@ class Postgre(object):
                     unresolved_statements = '; '.join(statement for statement in statements[statement_counter:])
                     print(f"the following transactions were not executed: "
                           f"{unresolved_statements}")
+                    conn.commit()
                     cur.close()
                     conn.close()
         else:

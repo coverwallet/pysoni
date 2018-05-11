@@ -1,11 +1,10 @@
+from time import sleep
+from random import randrange
 import psycopg2
 from psycopg2.extras import execute_values
-from time import sleep
 from pandas import DataFrame
-import asyncio
-import asyncpg
 from toolz import groupby
-
+import asyncpg
 
 class Postgre(object):
     """This class will contain special methods to perform over PostgreSQL.To create a class instance we need
@@ -225,6 +224,42 @@ class Postgre(object):
             conn.close()
             raise psycopg2.Error("We found the following issue: {0}"
                                  .format(e))
+
+    def postgre_multiple_statements(self, statements, timesleep=None):
+        """Method to execute multiple db transactions. The transactions are executed sequentially.
+        A list of string with the transactions we want to execute should we passed on the statements argument.
+        All peding transaction will be commited."""
+        statement_type = type(statements)
+        sample = statements[randrange(0, len(statements))]
+        if statement_type is list and type(sample) is str:
+            conn = self.connection()
+            cur = conn.cursor()
+            statement_counter = 0
+            try:
+                if timesleep:
+                    for statement in statements:
+                        cur.execute(statement)
+                        sleep(timesleep)
+                        statement_counter += 1
+                        print(f"Executing statement f{statement}")
+                else:
+                    for statement in statements:
+                        cur.execute(statement)
+                        statement_counter += 1
+            finally:
+                if len(statements) == statement_counter:
+                    conn.commit()
+                    cur.close()
+                    conn.close()
+                    print("All statements commited succesfully")
+                else:
+                    unresolved_statements = '; '.join(statement for statement in statements[statement_counter:])
+                    print(f"the following transactions were not executed: "
+                          f"{unresolved_statements}")
+                    cur.close()
+                    conn.close()
+        else:
+            raise TypeError('Statements argument need to be a list of strings')
 
     def postgre_to_dataframe(self, query):
         """This method it is perform to execute an sql query and it would retrieve a pandas Dataframe.

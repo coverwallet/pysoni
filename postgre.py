@@ -228,8 +228,8 @@ class Postgre(object):
     def postgre_multiple_statements(self, statements, timesleep=None):
         """Method to execute multiple db transactions. The transactions are executed sequentially.
         A list of string with the transactions we want to execute should we passed on the statements argument.
-        You can use a sleep between transactions with the timesleep parameter in this way you will we able to follow up,
-        wich transaction it is excuted.All peding transaction will be commited before any expection it is raised."""
+        You can use a sleep between transactions with the timesleep parameter.
+        All peding transaction will be commited before any expection it is raised."""
         statement_type = type(statements)
         sample = statements[randrange(0, len(statements))]
         if statement_type is list and type(sample) is str:
@@ -237,29 +237,23 @@ class Postgre(object):
             cur = conn.cursor()
             statement_counter = 0
             try:
-                if timesleep:
-                    for statement in statements:
-                        cur.execute(statement)
-                        sleep(timesleep)
-                        statement_counter += 1
-                        print(f"Executing statement f{statement}")
-                else:
-                    for statement in statements:
-                        cur.execute(statement)
-                        statement_counter += 1
+                if not timesleep:
+                    timesleep = 0
+                for statement in statements:
+                    cur.execute(statement)
+                    sleep(timesleep)
+                    statement_counter += 1
+                    print(f"Executing statement f{statement}")
             finally:
                 if len(statements) == statement_counter:
-                    conn.commit()
-                    cur.close()
-                    conn.close()
                     print("All statements commited succesfully")
                 else:
                     unresolved_statements = '; '.join(statement for statement in statements[statement_counter:])
                     print(f"the following transactions were not executed: "
                           f"{unresolved_statements}")
-                    conn.commit()
-                    cur.close()
-                    conn.close()
+                conn.commit()
+                cur.close()
+                conn.close()
         else:
             raise TypeError('Statements argument need to be a list of strings')
 

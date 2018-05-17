@@ -1,6 +1,7 @@
+from time import sleep
+from random import randrange
 import psycopg2
 from psycopg2.extras import execute_values
-from time import sleep
 from pandas import DataFrame
 import asyncpg
 from toolz import groupby
@@ -226,6 +227,39 @@ class Postgre(object):
             conn.close()
             raise psycopg2.Error("We found the following issue: {0}"
                                  .format(e))
+
+    def postgre_multiple_statements(self, statements, timesleep=None):
+        """Method to execute multiple db transactions. The transactions are executed sequentially.
+        A list of string with the transactions we want to execute need to be we passed on the statements argument.
+        You can use a sleep between transactions with the timesleep parameter.
+        All peding transaction will be commited before any expection it is raised."""
+
+        statement_type = type(statements)
+        sample = statements[randrange(0, len(statements))]
+        if statement_type is list and type(sample) is str:
+            raise TypeError('Statements argument need to be a list of strings')
+
+        if not timesleep:
+            timesleep = 0
+        statement_counter = 0
+
+        conn = self.connection()
+        cur = conn.cursor()
+        try:
+            for statement in statements:
+                cur.execute(statement)
+                sleep(timesleep)
+                statement_counter += 1
+        except Exception as e:
+            unresolved_statements = '; '.join(statement for statement in statements[statement_counter:])
+            print(f"Script failed in this transaction {statements[statement_counter]}.")
+            print("The following transactions were not executed: "
+                  f"{unresolved_statements}")
+            print(repr(e))
+        finally:
+            conn.commit()
+            cur.close()
+            conn.close()
 
     def postgre_to_dataframe(self, query):
         """This method it is perform to execute an sql query and it would retrieve a pandas Dataframe.

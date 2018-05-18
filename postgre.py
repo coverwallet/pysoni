@@ -66,25 +66,28 @@ class Postgre(object):
             else:
                 break
 
-    def drop_tables(self, query):
-        """This method it is perform to drop tables, please be careful."""
+    def drop_tables(self, table_names, timesleep=2):
+        """Drop tables from a database sequentially, timesleep between transactions it is set up to 2 seconds by default,
+        all transactions are commited at the same time"""
         conn = self.connection()
         cur = conn.cursor()
-        if type(query) is str:
-            cur.execute('DROP TABLE "{0}";'.format(query))
-        elif type(query) is list and (type(query[0]) is str or type(query[0]) is tuple):
-            if type(query[0]) is tuple:
-                query = [str(table[0]) for table in [tables for tables in query]]
-            for table in query:
-                print(f"We delete the following table {table}.Interrupt the script before it's too late.")
-                sleep(2)
-                cur.execute(f'DROP TABLE "{table}";')
-            conn.commit()
-            print('Tables were successfully removed.')
+
+        table_type = type(table_names)
+        sample_type = table_names[0]
+
+        try:
+            if table_type in (list, tuple) and (sample_type is str):
+                for table in table_names:
+                    print(f"We delete the following table {table}.Interrupt the script before it's too late.")
+                    sleep(timesleep)
+                    cur.execute(f'DROP TABLE "{table};')
+
+                conn.commit()
+                print('Tables were successfully removed')
+
+        finally:
             cur.close()
             conn.close()
-        else:
-            raise ValueError("Data value not correct")
 
     def drop_batch_tables(self, tablelist, timeout=True):
         "This method it is perform to delete a batch of tables , please we aware."

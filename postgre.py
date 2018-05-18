@@ -86,13 +86,23 @@ class Postgre(object):
         else:
             raise ValueError("Data value not correct")
 
-    def drop_batch_tables(self, tablelist, timeout=True):
-        "This method it is perform to delete a batch of tables , please we aware."
-        if type(tablelist) in (list, tuple) and tablelist[0] is str:
-            drop_tables = ','.join(table for table in tablelist)
-            self.postgre_statement(f"DROP TABLES {drop_tables}", timesleep=timeout)
-        else:
-            raise TypeError("Tablelist parameter not correct, a list or tuple of strings is needed")
+    def drop_batch_tables(self, tables_names, use_timesleep=True):
+        """"Drop a list of tables in batch , you can use the timesleep parameter before commiting"""
+        conn = self.connection()
+        cur = conn.cursor()
+
+        try:
+            table_type = type(tables_names)
+            table_sample = tables_names[0]
+            if table_type in (list, tuple) and table_sample is str:
+                drop_tables = ','.join(table for table in tables_names)
+                self.postgre_statement(f"DROP TABLES {drop_tables}", timesleep=use_timesleep)
+                conn.commit()
+            else:
+                raise TypeError("Tablelist parameter not correct, a list or tuple of strings is needed")
+        finally:
+            cur.close()
+            conn.close()
 
     def execute_batch_inserts(self, insert_rows, tablename, batch_size=1000):
         """Delete rows from a table using batches when the table column match any value given in the deleted_batch

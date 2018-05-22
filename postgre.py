@@ -75,15 +75,17 @@ class Postgre(object):
         table_type = type(table_names)
         sample_type = table_names[0]
 
-        try:
-            if table_type in (list, tuple) and (sample_type is str):
-                for table in table_names:
-                    print(f"We delete the following table {table}.Interrupt the script before it's too late.")
-                    sleep(timesleep)
-                    cur.execute(f'DROP TABLE "{table};')
+        if not table_type in (list, tuple) or not (sample_type is str):
+            raise ValueError("Input data doesn't have the correct format. It should be a list/tuple of strings")
 
-                conn.commit()
-                print('Tables were successfully removed')
+        try:
+            for table in table_names:
+                print(f"We delete the following table {table}.Interrupt the script before it's too late.")
+                sleep(timesleep)
+                cur.execute(f'DROP TABLE "{table}";')
+
+            conn.commit()
+            print('Tables were successfully removed')
 
         finally:
             cur.close()

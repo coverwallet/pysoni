@@ -49,22 +49,24 @@ class Postgre(object):
         return psycopg2.connect(dbname=self.dbname, user=self.user, password=self.password,
                                 host=self.host, port=self.port)
 
-    def delete_batch_rows(self, delete_rows, tablename, column, batchsize=1000, timeout=True):
-        """This method it is perform to delete rows in a batch from an specific table, please be careful."""
-        if type(delete_rows[0]) not in (str, int):
-            raise ValueError('Data format not correct')
+    def delete_batch_rows(self, delete_batch, table_name, column, batch_size=1000, timeout=True):
+        """Delete rows from a table using batches when the table column match any value given in the delete_batch
+         argument."""
+        schema_type = type(delete_batch)
+        if schema_type not in (list,tuple):
+            raise ValueError('Collection format needs to be a list or tuple.')
+            
+        random_index = delete_batch[randrange(0, len(delete_batch))]
+        if type(delete_batch[random_index]) not in (str,int):
+            raise ValueError('Collection Sample needs to be a str or int.')
 
-        delete, delete_rows = delete_rows[:batchsize], delete_rows[batchsize:]
-        rows_string = ','.join(f"'{i}'" for i in delete)
-        while len(delete) > 0:
-            self.postgre_statement("delete from {0} where {1} in ({2})".format(tablename, column, rows_string),
-                                   timesleep=timeout)
-            delete, delete_rows = delete_rows[:batchsize], delete_rows[batchsize:]
-            print("{0} rows left to delete".format(str(len(delete_rows))))
-            if len(delete) > 0:
-                rows_string = ','.join(f"'{i}'" for i in delete)
-            else:
-                break
+        delete_batch, remaining_rows = delete_batch[:batch_size], delete_batch[batch_size:]
+        while len(delete_batch) > 0:
+            rows_string = ','.join(f"'{register}'" for register in delete_batch)
+            self.postgre_statement(f"delete from {table_name} where {column} in ({rows_string})", timesleep=timeout)
+            delete_batch, remaining_rows = remaining_rows[:batch_size], remaining_rows[batch_size:]
+            remaining_rows_amount = str(len(delete_batch))
+            
 
     def drop_tables(self, table_names, timesleep=2):
         """Drop tables from a database sequentially, timesleep between transactions it is set up to 2 seconds by default,
@@ -100,7 +102,8 @@ class Postgre(object):
             raise TypeError("Tablelist parameter not correct, a list or tuple of strings is needed")
 
     def execute_batch_inserts(self, insert_rows, tablename, batch_size=1000):
-        """This method it is created to perform batch insert over postgresql."""
+        """Delete rows from a table using batches when the table column match any value given in the deleted_batch
+        argument."""
         conn = self.connection()
         cur = conn.cursor()
         insert = self.format_insert(insert_rows)
@@ -425,10 +428,10 @@ class PostgreAdvancedMethods(Postgre):
         """This method it is perform to update a table, following the delete and insert pattern to avoid unnecesary
         index creation."""
         if delete_batch_size is False:
-            self.delete_batch_rows(delete_list, tablename=tablename, column=merge_key, batchsize=insert_batch_size,
+            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batchsize=insert_batch_size,
                                    timeout=False)
             self.execute_batch_inserts(insert_list, tablename=tablename, batch_size=insert_batch_size)
         else:
-            self.delete_batch_rows(delete_list, tablename=tablename, column=merge_key, batchsize=delete_batch_size,
+            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batchsize=delete_batch_size,
                                    timeout=False)
             self.execute_batch_inserts(insert_list, tablename=tablename, batch_size=insert_batch_size)

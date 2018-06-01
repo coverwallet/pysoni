@@ -47,24 +47,23 @@ class Postgre(object):
                                 host=self.host, port=self.port)
 
     def delete_batch_rows(self, delete_batch, table_name, column, batch_size=1000, timeout=True):
-        """Delete rows from a table using batches when the table column match any value given in the deleted_batch
+        """Delete rows from a table using batches when the table column match any value given in the delete_batch
          argument."""
         schema_type = type(delete_batch)
-        sample = type(delete_batch[randrange(0, len(delete_batch))]) if schema_type in (list, tuple) else str
-        if schema_type not in (list,tuple) and sample not in (str,int):
-            raise ValueError('Data format not correct')
+        if schema_type not in (list,tuple):
+            raise ValueError('Collection format needs to be a list or tuple.')
+            
+        random_index = delete_batch[randrange(0, len(delete_batch))]
+        if type(delete_batch[random_index]) not in (str,int):
+            raise ValueError('Collection Sample needs to be a str or int.')
 
         delete_batch, remaining_rows = delete_batch[:batch_size], delete_batch[batch_size:]
-        rows_string = ','.join(f"'{register}'" for register in delete_batch)
         while len(delete_batch) > 0:
+            rows_string = ','.join(f"'{register}'" for register in delete_batch)
             self.postgre_statement(f"delete from {table_name} where {column} in ({rows_string})", timesleep=timeout)
             delete_batch, remaining_rows = remaining_rows[:batch_size], remaining_rows[batch_size:]
             remaining_rows_amount = str(len(delete_batch))
-            print(f"{remaining_rows_amount} rows left to delete")
-            if len(delete_batch) > 0:
-                rows_string = ','.join(f"'{register}'" for register in delete_batch)
-            else:
-                break
+            
 
     def drop_tables(self, query):
         """This method it is perform to drop tables, please be careful."""

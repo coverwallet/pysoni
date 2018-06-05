@@ -2,7 +2,7 @@ from time import sleep
 from random import randrange
 import psycopg2
 from psycopg2.extras import execute_values
-from pandas import DataFrame
+from pandas import DataFrame, to_datetime
 import asyncpg
 from toolz import groupby
 
@@ -269,12 +269,19 @@ class Postgre(object):
             cur.close()
             conn.close()
 
-    def postgre_to_dataframe(self, query):
+    def postgre_to_dataframe(self, query, convert_types=True):
         """This method it is perform to execute an sql query and it would retrieve a pandas Dataframe.
         If we want to make dynamic queries the attributes should be pass as the following example
         "select * from hoteles where city='{0}'".format('Madrid')"""
-        results = self.execute_query(query)
-        return DataFrame.from_records(results['results'], columns=results['keys'])
+        results = self.execute_query(query, types=convert_types)
+        df = DataFrame.from_records(results['results'], columns=results['keys'])
+        if convert_types:
+            for column_data_type,column_name in zip(results['types'],results['keys']):
+                if column_data_type in ('timestamp', 'timestampz'):
+                    df[column_name]=to_datetime(df[column_name])
+                elif column_data_type == 'date':
+                    df[column_name]=to_datetime(df[column_name], format='%Y-%m-%d')
+        return df
 
     def postgre_to_dict(self, query, types=False, sql_script=None, path_sql_script=None):
         """This method it is perform to execute an sql query and it would retrieve a list of lists of diccionaries.

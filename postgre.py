@@ -275,12 +275,13 @@ class Postgre(object):
         "select * from hoteles where city='{0}'".format('Madrid')"""
         results = self.execute_query(query, types=convert_types)
         df = DataFrame.from_records(results['results'], columns=results['keys'])
+        
         if convert_types:
-            for column_data_type,column_name in zip(results['types'],results['keys']):
+            for column_data_type, column_name in zip(results['types'], results['keys']):
                 if column_data_type in ('timestamp', 'timestampz'):
-                    df[column_name]=to_datetime(df[column_name])
+                    df[column_name] = to_datetime(df[column_name])
                 elif column_data_type == 'date':
-                    df[column_name]=to_datetime(df[column_name], format='%Y-%m-%d')
+                    df[column_name] = to_datetime(df[column_name], format='%Y-%m-%d')
         return df
 
     def postgre_to_dict(self, query, types=False, sql_script=None, path_sql_script=None):

@@ -211,30 +211,22 @@ class Postgre(object):
         else:
             raise ValueError("This schema it is empty.")
 
-    def postgre_statement(self, statement, timesleep=True):
-        """This method it is perform to different postgres statements, rename columns, truncate tables etc."""
+    def postgre_statement(self, statement, timesleep=0):
+        """Method to perform  postgres transactions as an example rename columns, truncate tables etc. By default
+        the transaction it is commited after the execution if you want set up a sleep between both events or
+        different transactions use the timesleep parameter"""
         conn = self.connection()
-        # we create a cursor
         cur = conn.cursor()
         try:
-            if timesleep is False:
-                cur.execute(statement)
-                print("Statement execute succesfully")
-                conn.commit()
-                cur.close()
-                return print("Statement run succesfully.")
-            else:
-                cur.execute(statement)
-                print("Statement execute succesfully, 10 seconds before")
-                sleep(10)
-                conn.commit()
-                cur.close()
-                return print("Statement run succesfully.")
-        except psycopg2.Error as e:
+            cur.execute(statement)
+            print("Statement execute succesfully")
+            sleep(timesleep)
+            conn.commit()
+            print("Statement run succesfully")
+
+        finally:
             cur.close()
             conn.close()
-            raise psycopg2.Error("We found the following issue: {0}"
-                                 .format(e))
 
     def postgre_multiple_statements(self, statements, timesleep=None):
         """Method to execute multiple db transactions. The transactions are executed sequentially.

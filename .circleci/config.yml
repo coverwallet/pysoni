@@ -28,4 +28,4 @@ jobs:
             pipenv run coverage xml
       - run:
           name: Sending coverage report to CodeClimate
-          command: './cc-test-reporter after-build --coverage-input-type coverage.py --exit-code $?'
+          command: './cc-test-reporter after-build --coverage-input-type coverage.py --id $CODE_CLIMATE_TEST_REPORTER_ID --exit-code $?'

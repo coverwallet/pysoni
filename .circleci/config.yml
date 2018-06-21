@@ -7,20 +7,26 @@ jobs:
       - checkout
       - run:
         - name: CodeClimate Test Reporter set up
-        - command: curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        - command: |
+            curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
       - run:
         - name: Notifying CodeClimate of a pending report
-        - command: ./cc-test-reporter before-build
+        - command: |
+            ./cc-test-reporter before-build
       - run:
         - name: Installing pipenv
-        - command: pip install pipenv
+        - command: |
+            pip install pipenv
       - run:
         - name: Install packages
-        - command: pipenv install --dev
+        - command: |
+            pipenv install --dev
       - run:
         - name: Running tests
-        - command: pipenv run coverage run --source=. -m pytest -v
+        - command: |
+            pipenv run coverage run --source=. -m pytest -v
       - run:
         - name: Sending coverage report to CodeClimate
-        - command: ./cc-test-reporter after-build --exit-code $EXIT_CODE
+        - command: |
+            ./cc-test-reporter after-build --exit-code $EXIT_CODE
 

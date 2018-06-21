@@ -1,6 +1,8 @@
 version: 2
 jobs:
   build:
+    environment:
+      CC_TEST_REPORTER_ID: $CODE_CLIMATE_TEST_REPORTER_ID
     docker:
       - image: circleci/python:3.6
     steps:

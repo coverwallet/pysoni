@@ -23,7 +23,9 @@ jobs:
           command: './cc-test-reporter before-build'
       - run:
           name: Running tests
-          command: 'pipenv run coverage run --source=. -m pytest -v'
+          command: |
+            pipenv run coverage run --source=. -m pytest -v
+            pipenv run coverage xml
       - run:
           name: Sending coverage report to CodeClimate
           command: './cc-test-reporter after-build --coverage-input-type coverage.py --exit-code $?'

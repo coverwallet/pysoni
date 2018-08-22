@@ -32,6 +32,9 @@ coverage.xml
 # pyenv
 .python-version
 
+# vscode settings.
+.vscode
+
 # Environments
 .env
 .venv

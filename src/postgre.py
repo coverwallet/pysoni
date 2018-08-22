@@ -440,8 +440,8 @@ class PostgreAdvancedMethods(Postgre):
         if delete_batch_size is False:
             self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batchsize=insert_batch_size,
                                    timeout=False)
-            self.execute_batch_inserts(insert_list, tablename=tablename, batch_size=insert_batch_size)
+            self.execute_batch_inserts(insert_list, tablename=tablename, batchsize=insert_batch_size)
         else:
-            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batch_size=delete_batch_size,
+            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batchsize=delete_batch_size,
                                    timeout=False)
-            self.execute_batch_inserts(insert_list, tablename=tablename, batch_size=insert_batch_size)
+            self.execute_batch_inserts(insert_list, tablename=tablename, batchsize=insert_batch_size)

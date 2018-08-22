@@ -2,6 +2,7 @@ from time import sleep
 from random import randrange
 import psycopg2
 from psycopg2.extras import execute_values
+from psycopg2.extensions import parse_dsn
 from pandas import DataFrame, to_datetime
 import asyncpg
 from toolz import groupby
@@ -12,12 +13,21 @@ class Postgre(object):
     the following arguments in this order database port, database host, database dbname, database user,
     database password"""
 
-    def __init__(self, port, host, dbname, user, password):
-        self.port = port
-        self.host = host
-        self.dbname = dbname
-        self.user = user
-        self.password = password
+    def __init__(self, port=None, host=None, dbname=None, user=None, password=None, uri=None):
+        if not uri:
+            self.port = port
+            self.host = host
+            self.dbname = dbname
+            self.user = user
+            self.password = password
+        else:
+            uri_dict = parse_dsn(uri)
+            
+            self.port = uri_dict.get('port')
+            self.host = uri_dict.get('host')
+            self.dbname = uri_dict.get('dbname')
+            self.user = uri_dict.get('user')
+            self.password = uri_dict.get('password')
 
     @staticmethod
     def format_insert(data_to_insert):
@@ -430,8 +440,8 @@ class PostgreAdvancedMethods(Postgre):
         if delete_batch_size is False:
             self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batchsize=insert_batch_size,
                                    timeout=False)
-            self.execute_batch_inserts(insert_list, tablename=tablename, batch_size=insert_batch_size)
+            self.execute_batch_inserts(insert_list, tablename=tablename, batchsize=insert_batch_size)
         else:
             self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batchsize=delete_batch_size,
                                    timeout=False)
-            self.execute_batch_inserts(insert_list, tablename=tablename, batch_size=insert_batch_size)
+            self.execute_batch_inserts(insert_list, tablename=tablename, batchsize=insert_batch_size)

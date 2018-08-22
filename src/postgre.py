@@ -95,7 +95,7 @@ class Postgre(object):
             for table in table_names:
                 print(f"We delete the following table {table}.Interrupt the script before it's too late.")
                 sleep(timesleep)
-                cur.execute(sql.SQL("DROP TABLE {}")
+                cur.execute(sql.SQL("DROP TABLE {};")
                 .format(sql.Identifier(table))) #Quite important to parse variable as a sequence
                                                 #even if its a single value.
 

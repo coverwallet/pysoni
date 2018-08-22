@@ -3,6 +3,7 @@ from random import randrange
 import psycopg2
 from psycopg2.extras import execute_values
 from psycopg2.extensions import parse_dsn
+from psycopg2 import sql
 from pandas import DataFrame, to_datetime
 import asyncpg
 from toolz import groupby
@@ -94,7 +95,9 @@ class Postgre(object):
             for table in table_names:
                 print(f"We delete the following table {table}.Interrupt the script before it's too late.")
                 sleep(timesleep)
-                cur.execute(f'DROP TABLE "{table}";')
+                cur.execute(sql.SQL("DROP TABLE {}")
+                .format(sql.Identifier(table))) #Quite important to parse variable as a sequence
+                                                #even if its a single value.
 
             conn.commit()
             print('Tables were successfully removed')

@@ -9,11 +9,13 @@ from toolz import groupby
 
 
 class Postgre(object):
-    """This class will contain special methods to perform over PostgreSQL.To create a class instance we need
-    the following arguments in this order database port, database host, database dbname, database user,
-    database password"""
+    """This class will contain special methods to perform over
+    PostgreSQL.To create a class instance we need the following
+    arguments in this order database port, database host,
+    database dbname, database user, database password"""
 
-    def __init__(self, port=None, host=None, dbname=None, user=None, password=None, uri=None):
+    def __init__(self, port=None, host=None, dbname=None,
+                 user=None, password=None, uri=None):
         if not uri:
             self.port = port
             self.host = host
@@ -22,7 +24,6 @@ class Postgre(object):
             self.password = password
         else:
             uri_dict = parse_dsn(uri)
-            
             self.port = uri_dict.get('port')
             self.host = uri_dict.get('host')
             self.dbname = uri_dict.get('dbname')
@@ -31,7 +32,8 @@ class Postgre(object):
 
     @staticmethod
     def format_insert(data_to_insert):
-        """Translates the python object output into an admisible postgresql input."""
+        """Translates the python object output
+        into an admisible postgresql input."""
         data_type = type(data_to_insert[0])
 
         if data_type is list:
@@ -45,7 +47,8 @@ class Postgre(object):
 
     @staticmethod
     def read_query(name, path=None):
-        """This method it is perform to open an sql query return a python string."""
+        """This method it is perform to open an
+        sql query return a python string."""
         if path:
             filename = f"{path}{name}.sql"
         else:
@@ -56,30 +59,40 @@ class Postgre(object):
 
     def connection(self):
         """This method return a postgre connection object."""
-        return psycopg2.connect(dbname=self.dbname, user=self.user, password=self.password,
-                                host=self.host, port=self.port)
+        return psycopg2.connect(dbname=self.dbname, user=self.user,
+                                password=self.password, host=self.host,
+                                port=self.port)
 
-    def delete_batch_rows(self, delete_batch, table_name, column, batch_size=1000, timeout=True):
-        """Delete rows from a table using batches when the table column match any value given in the delete_batch
-         argument."""
+    def delete_batch_rows(self, delete_batch, table_name,
+                          column, batch_size=1000, timeout=True):
+        """Delete rows from a table using batches when
+        the table column match any value given in the
+        delete_batch argument."""
         schema_type = type(delete_batch)
-        if schema_type not in (list,tuple):
+        if schema_type not in (list, tuple):
             raise ValueError('Collection format needs to be a list or tuple.')
-            
+
         random_index = delete_batch[randrange(0, len(delete_batch))]
-        if type(delete_batch[random_index]) not in (str,int):
+        if type(delete_batch[random_index]) not in (str, int):
             raise ValueError('Collection Sample needs to be a str or int.')
 
-        delete_batch, remaining_rows = delete_batch[:batch_size], delete_batch[batch_size:]
+        delete_batch = delete_batch[:batch_size]
+        remaining_rows = delete_batch[batch_size:]
+
         while len(delete_batch) > 0:
-            rows_string = ','.join(f"'{register}'" for register in delete_batch)
-            self.postgre_statement(f"delete from {table_name} where {column} in ({rows_string})", timesleep=timeout)
-            delete_batch, remaining_rows = remaining_rows[:batch_size], remaining_rows[batch_size:]
-            remaining_rows_amount = str(len(delete_batch))
-            
+            rows_string = ','.join(
+                f"'{register}'" for register in delete_batch)
+            self.postgre_statement(
+                f"delete from {table_name} where {column} \
+                in ({rows_string})",
+                timesleep=timeout)
+            delete_batch = remaining_rows[:batch_size]
+            remaining_rows = remaining_rows[batch_size:]
+            # remaining_rows_amount = str(len(delete_batch))
 
     def drop_tables(self, table_names, timesleep=2):
-        """Drop tables from a database sequentially, timesleep between transactions it is set up to 2 seconds by default,
+        """Drop tables from a database sequentially, timesleep
+        between transactions it is set up to 2 seconds by default,
         all transactions are commited at the same time"""
         conn = self.connection()
         cur = conn.cursor()
@@ -87,12 +100,15 @@ class Postgre(object):
         table_type = type(table_names)
         sample_type = table_names[0]
 
-        if not table_type in (list, tuple) or not (sample_type is str):
-            raise ValueError("Input data doesn't have the correct format. It should be a list/tuple of strings")
+        if table_type not in (list, tuple) or not (sample_type is str):
+            raise ValueError("Input data doesn't have the" 
+                             "correct format. It should be a"
+                             "list/tuple of strings")
 
         try:
             for table in table_names:
-                print(f"We delete the following table {table}.Interrupt the script before it's too late.")
+                print(f"We delete the following table {table}. \
+                      Interrupt the script before it's too late.")
                 sleep(timesleep)
                 cur.execute(f'DROP TABLE "{table}";')
 
@@ -104,23 +120,31 @@ class Postgre(object):
             conn.close()
 
     def drop_batch_tables(self, tablelist, timeout=True):
-        "This method it is perform to delete a batch of tables , please we aware."
+        """This method it is perform to delete
+        a batch of tables , please we aware."""
         if type(tablelist) in (list, tuple) and tablelist[0] is str:
             drop_tables = ','.join(table for table in tablelist)
-            self.postgre_statement(f"DROP TABLES {drop_tables}", timesleep=timeout)
+            self.postgre_statement(
+                f"DROP TABLES {drop_tables}", timesleep=timeout)
         else:
-            raise TypeError("Tablelist parameter not correct, a list or tuple of strings is needed")
+            raise TypeError(
+                "Tablelist parameter not correct, a \
+                list or tuple of strings is needed")
 
-    def execute_batch_inserts(self, insert_rows, tablename, batch_size=1000):
-        """Delete rows from a table using batches when the table column match any value given in the deleted_batch
-        argument."""
+    def execute_batch_inserts(self, insert_rows, tablename,
+                              batch_size=1000):
+        """Delete rows from a table using batches when
+        the table column match any value given in the 
+        deleted_batch argument."""
         conn = self.connection()
         cur = conn.cursor()
         insert = self.format_insert(insert_rows)
         batch_insert, insert = insert[:batch_size], insert[batch_size:]
         while len(batch_insert) > 0:
             try:
-                execute_values(cur, 'INSERT INTO ' + tablename + ' VALUES %s', batch_insert)
+                execute_values(cur, 
+                               'INSERT INTO ' + tablename + ' VALUES %s', 
+                               batch_insert)
                 batch_insert, insert = insert[:batch_size], insert[batch_size:]
                 conn.commit()
             except Exception as e:
@@ -132,8 +156,10 @@ class Postgre(object):
         cur.close()
         conn.close()
 
-    def execute_batch_inserts_specific_columns(self, insert_rows, tablename, columns, batch_size=1000):
-        """This method it is created to perform batch insert over postgresql."""
+    def execute_batch_inserts_specific_columns(self, insert_rows, tablename, 
+                                               columns, batch_size=1000):
+        """This method it is created to perform 
+        batch insert over postgresql."""
         conn = self.connection()
         cur = conn.cursor()
         if type(columns) in (list, tuple):

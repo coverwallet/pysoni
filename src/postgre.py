@@ -4,7 +4,6 @@ import psycopg2
 from psycopg2.extras import execute_values
 from psycopg2.extensions import parse_dsn
 from pandas import DataFrame, to_datetime
-import asyncpg
 from toolz import groupby
 
 

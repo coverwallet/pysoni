@@ -1,6 +1,7 @@
 import unittest
 
-from src.helpers import validate_types
+from pysoni.helpers import validate_types
+
 
 class TestValidateTypes(unittest.TestCase):
 

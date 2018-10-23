@@ -8,7 +8,7 @@ setup(name='pysoni',
       version=meta['__version__'],
       author='Coverwallet Data Team',
       license='MIT',
-      packages=['src'],
+      packages=['pysoni'],
       install_requires=[
           'psycopg2',
           'pandas',

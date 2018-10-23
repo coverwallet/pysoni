@@ -1,7 +1,7 @@
 from setuptools import setup
 
 meta = {}
-exec(open('./src/version.py').read(), meta)
+exec(open('./pysoni/version.py').read(), meta)
 
 setup(name='pysoni',
       description='Python library for psql clients',

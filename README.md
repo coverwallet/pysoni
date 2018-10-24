@@ -7,7 +7,7 @@ Just an example imgine you want to automatically load a DataFrame object from an
 
 ```python
 import pysoni
-psy = pysoni.Postgre(port=5432, host=pysoni.host, dbname=pysony.demo, user=pyson, password=password)
+psy = pysoni.Postgre(port=5432, host='pysoni.host', dbname='pysony.demo', user='pysoni', password='password')
 
 df = psy.postgre_to_dataframe('SELECT * from elephants')
 ```
@@ -23,10 +23,21 @@ insert_batch_size=YOURBATCHINSERTSIZE, delete_batch_size=YOURBATCHDELETESIZE)
 
 ### Installation.
 
-Pysoni library requires python 3.6 or later versions and is supported for PostgreSQL, versions 9.2 to 10.
+Pysoni library requires python 3.6 or later versions and is supported for PostgreSQL, versions from 9.2.
 
 Pisony is available on PyPI. Use pip to install:
 
 ```
 $ pip install pysoni
+```
+
+Additionally you can install directly from github.
+
+```
+$ pip install git+https://github.com/coverwallet/pysoni.git@<tag_name>#egg=pysoni
+```
+If you are installing pysoni in pipenv enviroment, use the following command.
+
+```
+$ pipenv install -e git+https://github.com/coverwallet/pysoni.git@<tag_name>#egg=pysoni
 ```

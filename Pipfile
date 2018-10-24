@@ -8,8 +8,6 @@ pytest = "*"
 coverage = "*"
 
 [packages]
-asyncio = ">=3.4.3"
-asyncpg = ">=0.14.0"
 pandas = ">=0.22.0"
 toolz = ">=0.9.0"
 "psycopg2" = ">=2.7.5"

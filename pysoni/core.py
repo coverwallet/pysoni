@@ -395,6 +395,20 @@ class Postgre(object):
         finally:
             conn.close()
 
+    def update_table(self, tablename, merge_key, delete_list, insert_list, insert_batch_size=5000,
+                     delete_batch_size=False):
+        """This method it is perform to update a table, following the delete and insert pattern to avoid unnecesary
+        index creation."""
+        if delete_batch_size is False:
+            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batch_size=insert_batch_size,
+                                   timeout=False)
+            self.execute_batch_inserts(
+                insert_list, tablename=tablename, batch_size=insert_batch_size)
+        else:
+            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batch_size=delete_batch_size,
+                                   timeout=False)
+            self.execute_batch_inserts(
+                insert_list, tablename=tablename, batch_size=insert_batch_size)
 
 class Potgre_Async(object):
     """This class it is going to perform some asynchronous methods over our database, please don´t use it at least
@@ -418,29 +432,3 @@ class Potgre_Async(object):
         values = await conn.fetch(query)
         await conn.close()
         return values
-
-
-class PostgreAdvancedMethods(Postgre):
-    """This class it is am abstraction over the Postgre class it is going to give us more specific methods combining
-    Postgre methods."""
-
-    def __init__(self, port, host, dbname, user, password):
-        super().__init__(port, host, dbname, user, password)
-        self.port = port
-        self.host = host
-        self.dbname = dbname
-        self.user = user
-        self.password = password
-
-    def update_table(self, tablename, merge_key, delete_list, insert_list,insert_batch_size=5000,
-                     delete_batch_size=False):
-        """This method it is perform to update a table, following the delete and insert pattern to avoid unnecesary
-        index creation."""
-        if delete_batch_size is False:
-            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batchsize=insert_batch_size,
-                                   timeout=False)
-            self.execute_batch_inserts(insert_list, tablename=tablename, batchsize=insert_batch_size)
-        else:
-            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batchsize=delete_batch_size,
-                                   timeout=False)
-            self.execute_batch_inserts(insert_list, tablename=tablename, batchsize=insert_batch_size)

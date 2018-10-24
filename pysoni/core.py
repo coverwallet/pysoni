@@ -66,7 +66,7 @@ class Postgre(object):
             raise ValueError('Collection format needs to be a list or tuple.')
             
         random_index = delete_batch[randrange(0, len(delete_batch))]
-        if type(delete_batch[random_index]) not in (str,int):
+        if type(random_index) not in (str,int):
             raise ValueError('Collection Sample needs to be a str or int.')
 
         delete_batch, remaining_rows = delete_batch[:batch_size], delete_batch[batch_size:]
@@ -74,7 +74,6 @@ class Postgre(object):
             rows_string = ','.join(f"'{register}'" for register in delete_batch)
             self.postgre_statement(f"delete from {table_name} where {column} in ({rows_string})", timesleep=timeout)
             delete_batch, remaining_rows = remaining_rows[:batch_size], remaining_rows[batch_size:]
-            remaining_rows_amount = str(len(delete_batch))
             
 
     def drop_tables(self, table_names, timesleep=2):

@@ -394,8 +394,8 @@ class Postgre(object):
             cur.close()
         finally:
             conn.close()
-
-    def update_table(self, tablename, merge_key, delete_list, insert_list, insert_batch_size=5000,
+            
+    def update_table(self, tablename, merge_key, delete_list, insert_list,insert_batch_size=5000,
                      delete_batch_size=False):
         """This method it is perform to update a table, following the delete and insert pattern to avoid unnecesary
         index creation."""

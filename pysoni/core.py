@@ -396,30 +396,6 @@ class Postgre(object):
             conn.close()
 
 
-class Potgre_Async(object):
-    """This class it is going to perform some asynchronous methods over our database, please don´t use it at least
-    they are necesarry. For more documentation visit this link. """
-
-    def __init__(self, port, host, dbname, user, password):
-        self.port = port
-        self.host = host
-        self.dbname = dbname
-        self.user = user
-        self.password = password
-
-    async def execute_query(self, query):
-        conn = await asyncpg.connect(
-            user=self.user,
-            password=self.password,
-            database=self.dbname,
-            host=self.host,
-            port=self.port,
-            ssl=True)
-        values = await conn.fetch(query)
-        await conn.close()
-        return values
-
-
 class PostgreAdvancedMethods(Postgre):
     """This class it is am abstraction over the Postgre class it is going to give us more specific methods combining
     Postgre methods."""

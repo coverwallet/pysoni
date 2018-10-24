@@ -394,29 +394,18 @@ class Postgre(object):
             cur.close()
         finally:
             conn.close()
-
-
-class PostgreAdvancedMethods(Postgre):
-    """This class it is am abstraction over the Postgre class it is going to give us more specific methods combining
-    Postgre methods."""
-
-    def __init__(self, port, host, dbname, user, password):
-        super().__init__(port, host, dbname, user, password)
-        self.port = port
-        self.host = host
-        self.dbname = dbname
-        self.user = user
-        self.password = password
-
+            
     def update_table(self, tablename, merge_key, delete_list, insert_list,insert_batch_size=5000,
                      delete_batch_size=False):
         """This method it is perform to update a table, following the delete and insert pattern to avoid unnecesary
         index creation."""
         if delete_batch_size is False:
-            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batchsize=insert_batch_size,
+            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batch_size=insert_batch_size,
                                    timeout=False)
-            self.execute_batch_inserts(insert_list, tablename=tablename, batchsize=insert_batch_size)
+            self.execute_batch_inserts(
+                insert_list, tablename=tablename, batch_size=insert_batch_size)
         else:
-            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batchsize=delete_batch_size,
+            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batch_size=delete_batch_size,
                                    timeout=False)
-            self.execute_batch_inserts(insert_list, tablename=tablename, batchsize=insert_batch_size)
+            self.execute_batch_inserts(
+                insert_list, tablename=tablename, batch_size=insert_batch_size)

@@ -1,10 +1,13 @@
 from time import sleep
 from random import randrange
+
 import psycopg2
 from psycopg2.extras import execute_values
 from psycopg2.extensions import parse_dsn
 from pandas import DataFrame, to_datetime
 from toolz import groupby
+
+from pysoni.helpers import validate_types
 
 
 class Postgre(object):
@@ -61,20 +64,15 @@ class Postgre(object):
     def delete_batch_rows(self, delete_batch, table_name, column, batch_size=1000, timeout=True):
         """Delete rows from a table using batches when the table column match any value given in the delete_batch
          argument."""
-        schema_type = type(delete_batch)
-        if schema_type not in (list,tuple):
-            raise ValueError('Collection format needs to be a list or tuple.')
-            
-        random_index = delete_batch[randrange(0, len(delete_batch))]
-        if type(random_index) not in (str,int):
-            raise ValueError('Collection Sample needs to be a str or int.')
+        validate_types(subject=delete_batch, expected_types=[list,tuple],
+                       contained_types=[str,int])
 
         delete_batch, remaining_rows = delete_batch[:batch_size], delete_batch[batch_size:]
         while len(delete_batch) > 0:
             rows_string = ','.join(f"'{register}'" for register in delete_batch)
             self.postgre_statement(f"delete from {table_name} where {column} in ({rows_string})", timesleep=timeout)
             delete_batch, remaining_rows = remaining_rows[:batch_size], remaining_rows[batch_size:]
-            
+
 
     def drop_tables(self, table_names, timesleep=2):
         """Drop tables from a database sequentially, timesleep between transactions it is set up to 2 seconds by default,

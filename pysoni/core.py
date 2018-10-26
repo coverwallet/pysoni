@@ -162,7 +162,7 @@ class Postgre(object):
         conn = self.connection()
         cur = conn.cursor()
         try:
-            if sql_script is None:
+            if not sql_script:
                 cur.execute(queryname)
                 res = cur.fetchall()
             else:

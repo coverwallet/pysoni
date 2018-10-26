@@ -197,25 +197,33 @@ class Postgre(object):
 
     def get_schema(self, schema, metadata=False):
         """This method it is perform to get all the schema information from postgresql."""
-        if metadata is False:
-            format_tables = self.postgre_to_tuple(f"select table_name,column_name,data_type "
-                                                  f"from information_schema.columns where "
-                                                  f"table_schema='{schema}' and "
-                                                  f"table_name not like 'pg_%'")
-        else:
-            format_tables = self.postgre_to_tuple(f"select table_name,column_name,data_type "
-                                                  f"from information_schema.columns where "
-                                                  f"table_schema='{schema}'")
 
-        if len(format_tables) > 0:
-            final_list = [{'tablename': i[0], 'columname': i[1], 'data_type': i[2]} for i in format_tables]
-            group_results = groupby('tablename', final_list)
-            final_results = []
-            for key, value in group_results.items():
-                final_results.append({key: {i['columname']: i['data_type'] for i in value}})
-            return final_results
-        else:
-            raise ValueError("This schema it is empty.")
+        query = (
+            "SELECT table_name, column_name, data_type FROM "
+            f"information_schema.columns WHERE table_schema='{schema}'"
+        )
+        if not metadata:
+            query += "AND table_name NOT LIKE 'pg_%'"
+
+        tables_information = self.postgre_to_tuple(query)
+
+        if not tables_information:
+            raise ValueError('The schema is empty')
+
+        schemas_metadata = [{
+            'table_name': table_information[0],
+            'column_name': table_information[1],
+            'data_type': table_information[2]
+        } for table_information in tables_information]
+
+        final_results = []
+        for table_name, table_metadatas in groupby('table_name', schemas_metadata).items():
+            final_results.append({
+                table_name: { metadata['column_name']: metadata['data_type'] for metadata in table_metadatas }
+            })
+
+        return final_results
+
 
     def postgre_statement(self, statement, timesleep=0):
         """Method to perform  postgres transactions as an example rename columns, truncate tables etc. By default

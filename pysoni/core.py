@@ -7,7 +7,7 @@ from psycopg2.extensions import parse_dsn
 from pandas import DataFrame, to_datetime
 from toolz import groupby
 
-from pysoni.helpers import validate_types
+from pysoni.helpers
 
 
 class Postgre(object):
@@ -64,8 +64,8 @@ class Postgre(object):
     def delete_batch_rows(self, delete_batch, table_name, column, batch_size=1000, timeout=True):
         """Delete rows from a table using batches when the table column match any value given in the delete_batch
          argument."""
-        validate_types(subject=delete_batch, expected_types=[list,tuple],
-                       contained_types=[str,int])
+        pysoni_helpers.validate_types(subject=delete_batch, expected_types=[list,tuple],
+                                      contained_types=[str,int])
 
         delete_batch, remaining_rows = delete_batch[:batch_size], delete_batch[batch_size:]
         while len(delete_batch) > 0:
@@ -108,52 +108,41 @@ class Postgre(object):
             raise TypeError("Tablelist parameter not correct, a list or tuple of strings is needed")
 
     def execute_batch_inserts(self, insert_rows, tablename, batch_size=1000):
-        """Delete rows from a table using batches when the table column match any value given in the deleted_batch
-        argument."""
+        """Insert rows in a table using batches, the defualt batch size it is set to 1000."""
         conn = self.connection()
         cur = conn.cursor()
-        insert = self.format_insert(insert_rows)
-        batch_insert, insert = insert[:batch_size], insert[batch_size:]
-        while len(batch_insert) > 0:
-            try:
-                execute_values(cur, 'INSERT INTO ' + tablename + ' VALUES %s', batch_insert)
+        try:
+            insert = self.format_insert(insert_rows)
+            batch_insert, insert = insert[:batch_size], insert[batch_size:]
+            while len(batch_insert) > 0:
+                execute_values(cur, f'INSERT INTO {tablename}' + ' VALUES %s', 
+                               batch_insert)
                 batch_insert, insert = insert[:batch_size], insert[batch_size:]
                 conn.commit()
-            except Exception as e:
-                cur.close()
-                conn.close()
-                print(e)
-
-        conn.commit()
-        cur.close()
-        conn.close()
+        finally:
+            conn.commit()
+            cur.close()
+            conn.close()
 
     def execute_batch_inserts_specific_columns(self, insert_rows, tablename, columns, batch_size=1000):
-        """This method it is created to perform batch insert over postgresql."""
+        """Insert rows in spectific table columns using batches, the defualt batch size it is set to 1000."""
         conn = self.connection()
         cur = conn.cursor()
-        if type(columns) in (list, tuple):
-            insert_colums = ','.join(str(i) for i in columns)
-        elif type(columns) is str:
-            insert_colums = columns
-        else:
-            raise ValueError('Data format not correct')
-        insert = self.format_insert(insert_rows)
-        batch_insert, insert = insert[:batch_size], insert[batch_size:]
-        while len(batch_insert) > 0:
-            try:
-                execute_values(cur, 'INSERT INTO ' + tablename + ' ({0}) '.format(insert_colums)
-                               + ' VALUES %s', batch_insert)
+        try:      
+            pysoni_helpers.validate_types(subject=columns, expected_types=[list, tuple, str])
+
+            insert_colums = pysoni_helpers.format_sql_string(subject=columns)            
+            insert = self.format_insert(insert_rows)
+            batch_insert, insert = insert[:batch_size], insert[batch_size:]
+            while len(batch_insert) > 0:
+                execute_values(cur, f'INSERT INTO {tablename} ({insert_colums}) '
+                                + ' VALUES %s', batch_insert)
                 batch_insert, insert = insert[:batch_size], insert[batch_size:]
                 conn.commit()
-            except Exception as e:
-                cur.close()
-                conn.close()
-                print(e)
-
-        conn.commit()
-        cur.close()
-        conn.close()
+        finally:
+            conn.commit()
+            cur.close()
+            conn.close()
 
     def execute_query(self, queryname, types=False, sql_script=None, path_sql_script=None):
         """This method it is perform to execute an sql query.

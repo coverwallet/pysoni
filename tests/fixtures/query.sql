@@ -1,0 +1,1 @@
+SELECT * FROM tablename limit 1000

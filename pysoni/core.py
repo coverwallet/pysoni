@@ -65,7 +65,7 @@ class Postgre(object):
         """Delete rows from a table using batches when the table column match any value given in the delete_batch
          argument."""
         helpers.validate_types(subject=delete_batch, expected_types=[list,tuple],
-                                      contained_types=[str,int])
+                               contained_types=[str,int])
 
         delete_batch, remaining_rows = delete_batch[:batch_size], delete_batch[batch_size:]
         while len(delete_batch) > 0:
@@ -108,13 +108,13 @@ class Postgre(object):
             raise TypeError("Tablelist parameter not correct, a list or tuple of strings is needed")
 
     def execute_batch_inserts(self, insert_rows, tablename, batch_size=1000):
-        """Insert rows in a table using batches, the defualt batch size it is set to 1000."""
+        """Insert rows in a table using batches, the default batch size it is set to 1000."""
         conn = self.connection()
         cur = conn.cursor()
         try:
             insert = self.format_insert(insert_rows)
             batch_insert, insert = insert[:batch_size], insert[batch_size:]
-            while len(batch_insert) > 0:
+            while batch_insert > 0:
                 execute_values(cur, f'INSERT INTO {tablename}' + ' VALUES %s', 
                                batch_insert)
                 batch_insert, insert = insert[:batch_size], insert[batch_size:]
@@ -125,7 +125,7 @@ class Postgre(object):
             conn.close()
 
     def execute_batch_inserts_specific_columns(self, insert_rows, tablename, columns, batch_size=1000):
-        """Insert rows in spectific table columns using batches, the defualt batch size it is set to 1000."""
+        """Insert rows in spectific table columns using batches, the default batch size it is set to 1000."""
         conn = self.connection()
         cur = conn.cursor()
         try:      
@@ -134,7 +134,7 @@ class Postgre(object):
             insert_colums = helpers.format_sql_string(subject=columns)            
             insert = self.format_insert(insert_rows)
             batch_insert, insert = insert[:batch_size], insert[batch_size:]
-            while len(batch_insert) > 0:
+            while batch_insert > 0:
                 execute_values(cur, f'INSERT INTO {tablename} ({insert_colums}) '
                                 + ' VALUES %s', batch_insert)
                 batch_insert, insert = insert[:batch_size], insert[batch_size:]
@@ -256,21 +256,6 @@ class Postgre(object):
             cur.close()
             conn.close()
 
-    def postgre_to_dataframe(self, query, convert_types=True):
-        """This method it is perform to execute an sql query and it would retrieve a pandas Dataframe.
-        If we want to make dynamic queries the attributes should be pass as the following example
-        "select * from hoteles where city='{0}'".format('Madrid')"""
-        results = self.execute_query(query, types=convert_types)
-        df = DataFrame.from_records(results['results'], columns=results['keys'])
-        
-        if convert_types:
-            for column_data_type, column_name in zip(results['types'], results['keys']):
-                if column_data_type in ('timestamp', 'timestampz'):
-                    df[column_name] = to_datetime(df[column_name])
-                elif column_data_type == 'date':
-                    df[column_name] = to_datetime(df[column_name], format='%Y-%m-%d')
-        return df
-
     def postgre_to_dict(self, query, types=False, sql_script=None, path_sql_script=None):
         """This method it is perform to execute an sql query and it would retrieve a list of lists of diccionaries.
         If we want to make dynamic queries the attributes should be pass as the following example
@@ -381,17 +366,17 @@ class Postgre(object):
         finally:
             conn.close()
             
-    def update_table(self, tablename, merge_key, delete_list, insert_list,insert_batch_size=5000,
-                     delete_batch_size=False):
+    def update_table(self, tablename, merge_key, delete_list, insert_list, insert_batch_size=5000,
+                     delete_batch_size=None, columns=None):
         """This method it is perform to update a table, following the delete and insert pattern to avoid unnecesary
         index creation."""
         if delete_batch_size is False:
             self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batch_size=insert_batch_size,
                                    timeout=False)
-            self.execute_batch_inserts(
-                insert_list, tablename=tablename, batch_size=insert_batch_size)
+            self.execute_batch_inserts(insert_list, tablename=tablename, 
+                                       batch_size=insert_batch_size)
         else:
             self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batch_size=delete_batch_size,
                                    timeout=False)
-            self.execute_batch_inserts(
-                insert_list, tablename=tablename, batch_size=insert_batch_size)
+            self.execute_batch_inserts(insert_list, tablename=tablename,
+                                       batch_size=insert_batch_size)

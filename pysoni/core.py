@@ -7,7 +7,7 @@ from psycopg2.extensions import parse_dsn
 from pandas import DataFrame, to_datetime
 from toolz import groupby
 
-from pysoni.helpers
+import helpers
 
 
 class Postgre(object):
@@ -64,7 +64,7 @@ class Postgre(object):
     def delete_batch_rows(self, delete_batch, table_name, column, batch_size=1000, timeout=True):
         """Delete rows from a table using batches when the table column match any value given in the delete_batch
          argument."""
-        pysoni_helpers.validate_types(subject=delete_batch, expected_types=[list,tuple],
+        helpers.validate_types(subject=delete_batch, expected_types=[list,tuple],
                                       contained_types=[str,int])
 
         delete_batch, remaining_rows = delete_batch[:batch_size], delete_batch[batch_size:]
@@ -129,9 +129,9 @@ class Postgre(object):
         conn = self.connection()
         cur = conn.cursor()
         try:      
-            pysoni_helpers.validate_types(subject=columns, expected_types=[list, tuple, str])
+            helpers.validate_types(subject=columns, expected_types=[list, tuple, str])
 
-            insert_colums = pysoni_helpers.format_sql_string(subject=columns)            
+            insert_colums = helpers.format_sql_string(subject=columns)            
             insert = self.format_insert(insert_rows)
             batch_insert, insert = insert[:batch_size], insert[batch_size:]
             while len(batch_insert) > 0:

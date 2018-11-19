@@ -1,4 +1,4 @@
-code import random
+import random
 
 
 def validate_types(subject, expected_types=[], contained_types=[]):

@@ -1,4 +1,4 @@
-import random
+code import random
 
 
 def validate_types(subject, expected_types=[], contained_types=[]):
@@ -11,7 +11,6 @@ def validate_types(subject, expected_types=[], contained_types=[]):
             raise ValueError('The type of the elements inside the subject do not match the expected ones')
 
 def format_sql_string(subject):
-    insert_columns = ''
     if type(subject) in (list, tuple):
         insert_columns = ','.join(str(subject_object) for subject_object in subject)
     elif type(subject) is str:

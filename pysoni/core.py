@@ -7,7 +7,7 @@ from psycopg2.extensions import parse_dsn
 from pandas import DataFrame, to_datetime
 from toolz import groupby
 
-import helpers
+from . import helpers
 
 
 class Postgre(object):

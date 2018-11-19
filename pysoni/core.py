@@ -114,7 +114,7 @@ class Postgre(object):
         try:
             insert = self.format_insert(insert_rows)
             batch_insert, insert = insert[:batch_size], insert[batch_size:]
-            while batch_insert > 0:
+            while batch_insert:
                 execute_values(cur, f'INSERT INTO {tablename}' + ' VALUES %s', 
                                batch_insert)
                 batch_insert, insert = insert[:batch_size], insert[batch_size:]
@@ -134,9 +134,9 @@ class Postgre(object):
             insert_colums = helpers.format_sql_string(subject=columns)            
             insert = self.format_insert(insert_rows)
             batch_insert, insert = insert[:batch_size], insert[batch_size:]
-            while batch_insert > 0:
+            while batch_insert:
                 execute_values(cur, f'INSERT INTO {tablename} ({insert_colums}) '
-                                + ' VALUES %s', batch_insert)
+                                    +' VALUES %s', batch_insert)
                 batch_insert, insert = insert[:batch_size], insert[batch_size:]
                 conn.commit()
         finally:

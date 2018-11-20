@@ -267,7 +267,7 @@ class Postgre(object):
     def postgre_from_dataframe(self, tablename, df_object, method, batch_size, 
                                merge_key=None):
 
-        df_columns = df_object.columns
+        df_columns = list(df_object.columns.values)
         df_values = df_object.values.tolist()
 
         if method != 'rebuilt' and method !='append':

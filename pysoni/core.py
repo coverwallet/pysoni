@@ -268,7 +268,7 @@ class Postgre(object):
                                merge_key=None):
 
         df_columns = list(df_object.columns.values)
-        df_values = df_object.values.tolist()
+        df_values = df_object.values[:,1:].tolist()
 
         if method != 'rebuilt' and method !='append':
             raise  ValueError("""Invalid method. Choose rebuild method if you want to 

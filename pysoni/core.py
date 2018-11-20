@@ -270,7 +270,7 @@ class Postgre(object):
         df_columns = df_object.columns
         df_values = df_object.values.tolist()
 
-        if method != 'rebuilt' or method !='append':
+        if method != 'rebuilt' and method !='append':
             raise  ValueError("""Invalid method. Choose rebuild method if you want to 
                                  update a table using a column, choose append if you want 
                                 just to update it.""")

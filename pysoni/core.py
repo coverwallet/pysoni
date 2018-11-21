@@ -264,14 +264,15 @@ class Postgre(object):
             cur.close()
             conn.close()
 
-    def postgre_from_dataframe(self, tablename, df_object, method, batch_size, 
+    def postgre_from_dataframe(self, tablename, dataframe_object, method, batch_size, 
                                merge_key=None):
         """This method it is perform to insert a Dataframe python object into a DWH table.
         The insert method can be done by appending elements to a table for that purpose use
         the append opction in the method param. If you want to update a table by a column, you 
         need to use the rebuilt method and select the merge_key column of your DWH table."""
-        df_columns = df_object.columns[1:].tolist()
-        df_values = df_object.values[:, 1:].tolist()
+
+        df_columns = dataframe_object.columns[1:].tolist()
+        df_values = dataframe_object.values[:, 1:].tolist()
 
         if method not in ('rebuilt', 'append'):
             raise ValueError("""Invalid method. Choose rebuild method if you want to 
@@ -280,13 +281,14 @@ class Postgre(object):
 
         if method == 'rebuilt':
             if not merge_key:
-                raise ValueError(
-                    'To rebuilt a table you must select merge_key with the table column')
+                raise ValueError("""To rebuilt a table you must select 
+                                 merge_key with the table column""")
 
-            df_delete_values = df_object[merge_key].unique().tolist()
+            df_delete_values = dataframe_object[merge_key].unique().tolist()
             self.update_table(tablename=tablename, merge_key=merge_key,
                               insert_batch_size=batch_size, delete_batch_size=batch_size,
-                              insert_list=df_values,delete_list=df_delete_values, columns=df_columns)
+                              insert_list=df_values, delete_list=df_delete_values, 
+                              columns=df_columns)
 
         elif method == 'append':
             self.execute_batch_inserts_specific_columns(tablename=tablename, columns=df_columns,

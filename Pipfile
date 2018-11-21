@@ -7,11 +7,14 @@ name = "pypi"
 pytest = "*"
 coverage = "*"
 ipython = "*"
+python-dotenv = "*"
 
 [packages]
 pandas = ">=0.22.0"
 toolz = ">=0.9.0"
 "psycopg2" = ">=2.7.5"
+pytest-mock = "*"
+
 
 [requires]
 python_version = "3.6"

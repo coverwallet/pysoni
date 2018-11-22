@@ -3,6 +3,9 @@ jobs:
   build:
     docker:
       - image: circleci/python:3.6
+        environment:
+          POSTGRES_USER: cw_test
+          POSTGRES_DB: coverwalletdwh
       - image: postgres:9.6.2-alpine
         environment:
           POSTGRES_USER: cw_test

@@ -1,3 +1,5 @@
+import os
+
 import pytest
 import psycopg2
 
@@ -18,7 +20,7 @@ def test_connection_with_connection_options(pysoni_client_connection_options, mo
     pysoni_client_connection_options.connection()
 
     psycopg2.connect.assert_called_once_with(
-        dbname='', user='', password='circleci',
+        dbname=os.environ['POSTGRES_DB'], user=os.environ['POSTGRES_USER'], password='',
         host='localhost', port='5432', options='-c statement_timeout=1')
 
 def test_invalid_connection(pysoni_invalid_client):

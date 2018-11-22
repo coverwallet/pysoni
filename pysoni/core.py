@@ -15,13 +15,15 @@ class Postgre(object):
     the following arguments in this order database port, database host, database dbname, database user,
     database password"""
 
-    def __init__(self, port=None, host=None, dbname=None, user=None, password=None, uri=None):
+    def __init__(self, port=None, host=None, dbname=None, user=None, password=None, uri=None,
+                 connection_options='-c statement_timeout=3600000'):
         if not uri:
             self.port = port
             self.host = host
             self.dbname = dbname
             self.user = user
             self.password = password
+            self.connection_options = connection_options
         else:
             uri_dict = parse_dsn(uri)
             
@@ -30,6 +32,7 @@ class Postgre(object):
             self.dbname = uri_dict.get('dbname')
             self.user = uri_dict.get('user')
             self.password = uri_dict.get('password')
+            self.connection_options = connection_options
 
     @staticmethod
     def format_insert(data_to_insert):
@@ -58,8 +61,12 @@ class Postgre(object):
 
     def connection(self):
         """This method return a postgre connection object."""
-        return psycopg2.connect(dbname=self.dbname, user=self.user, password=self.password,
-                                host=self.host, port=self.port)
+        if self.connection_options:
+            return psycopg2.connect(dbname=self.dbname, user=self.user, password=self.password,
+                                host=self.host, port=self.port, options=self.connection_options)
+        else:
+            return psycopg2.connect(dbname=self.dbname, user=self.user, password=self.password,
+                                    host=self.host, port=self.port)
 
     def delete_batch_rows(self, delete_batch, table_name, column, batch_size=1000, timeout=True):
         """Delete rows from a table using batches when the table column match any value given in the delete_batch

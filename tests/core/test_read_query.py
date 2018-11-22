@@ -21,6 +21,6 @@ def test_with_path_and_filename_returns_file_content(pysoni_client):
 def test_filename_does_not_exist_raise_file_not_found_error(pysoni_client):
     filename = 'query'
     path = 'test/fixtures/'
-    
+
     with pytest.raises(FileNotFoundError):
          pysoni_client.read_query(filename, path)

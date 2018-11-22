@@ -18,7 +18,7 @@ def pysoni_invalid_client():
 
 @pytest.fixture
 def pysoni_client_connection_options():
-    return Postgre(port='5432', host='localhost', user='',dbname='', 
+    return Postgre(port='5432', host='localhost', user='circleci',dbname='', 
                    password='', connection_options='-c statement_timeout=1')
 
 

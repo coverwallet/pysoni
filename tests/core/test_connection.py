@@ -18,7 +18,7 @@ def test_connection_with_connection_options(pysoni_client_connection_options, mo
     pysoni_client_connection_options.connection()
 
     psycopg2.connect.assert_called_once_with(
-        dbname='', user='', password='',
+        dbname='', user='', password='circleci',
         host='localhost', port='5432', options='-c statement_timeout=1')
 
 def test_invalid_connection(pysoni_invalid_client):

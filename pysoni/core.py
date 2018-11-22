@@ -16,7 +16,7 @@ class Postgre(object):
     database password"""
 
     def __init__(self, port=None, host=None, dbname=None, user=None, password=None, uri=None,
-                 connection_options=None):
+                 connection_options='-c statement_timeout=3600000'):
         if not uri:
             self.port = port
             self.host = host

@@ -9,7 +9,7 @@ def test_connection(pysoni_client, mocker):
 
     psycopg2.connect.assert_called_once_with(
         dbname='coverwalletdwh', user='cw_test', password='',
-        host='localhost', port='5432')
+        host='localhost', port='5432',  options='-c statement_timeout=3600000')
 
 
 def test_connection_with_connection_options(pysoni_client_connection_options, mocker):

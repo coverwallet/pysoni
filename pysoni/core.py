@@ -264,6 +264,54 @@ class Postgre(object):
             cur.close()
             conn.close()
 
+    def postgre_from_dataframe(self, tablename, dataframe_object, method, batch_size, 
+                               merge_key=None):
+        """This method it is perform to insert a Dataframe python object into a DWH table.
+        The insert method can be done by appending elements to a table for that purpose use
+        the append opction in the method param. If you want to update a table by a column, you 
+        need to use the rebuilt method and select the merge_key column of your DWH table."""
+
+        df_columns = dataframe_object.columns[1:].tolist()
+        df_values = dataframe_object.values[:, 1:].tolist()
+
+        if method not in ('rebuilt', 'append'):
+            raise ValueError("""Invalid method. Choose rebuild method if you want to 
+                                 update a table using a column, choose append if you want 
+                                just to update it.""")
+
+        if method == 'rebuilt':
+            if not merge_key:
+                raise ValueError("""To rebuilt a table you must select 
+                                 merge_key with the table column""")
+
+            df_delete_values = dataframe_object[merge_key].unique().tolist()
+            self.update_table(tablename=tablename, merge_key=merge_key,
+                              insert_batch_size=batch_size, delete_batch_size=batch_size,
+                              insert_list=df_values, delete_list=df_delete_values, 
+                              columns=df_columns)
+
+        elif method == 'append':
+            self.execute_batch_inserts_specific_columns(tablename=tablename, columns=df_columns,
+                                                        insert_rows=df_values, batch_size=batch_size)
+
+
+    def postgre_to_dataframe(self, query, convert_types=True, sql_script=None, path_sql_script=None):
+        """This method it is perform to execute an sql query and it would retrieve a pandas Dataframe.
+        If we want to make dynamic queries the attributes should be pass as the following example
+        "select * from hoteles where city='{0}'".format('Madrid')"""
+        results = self.execute_query(query, types=convert_types, sql_script=sql_script,
+                                     path_sql_script=path_sql_script)
+        df = DataFrame.from_records(results['results'], columns=results['keys'])
+
+        if convert_types:
+            for column_data_type, column_name in zip(results['types'], results['keys']):
+                if column_data_type in ('timestamp', 'timestampz'):
+                    df[column_name] = to_datetime(df[column_name])
+                elif column_data_type == 'date':
+                    df[column_name] = to_datetime(
+                        df[column_name], format='%Y-%m-%d')
+        return df
+
     def postgre_to_dict(self, query, types=False, sql_script=None, path_sql_script=None):
         """This method it is perform to execute an sql query and it would retrieve a list of lists of diccionaries.
         If we want to make dynamic queries the attributes should be pass as the following example
@@ -377,14 +425,21 @@ class Postgre(object):
     def update_table(self, tablename, merge_key, delete_list, insert_list, insert_batch_size=5000,
                      delete_batch_size=None, columns=None):
         """This method it is perform to update a table, following the delete and insert pattern to avoid unnecesary
-        index creation."""
-        if delete_batch_size is False:
-            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batch_size=insert_batch_size,
-                                   timeout=False)
-            self.execute_batch_inserts(insert_list, tablename=tablename, 
-                                       batch_size=insert_batch_size)
-        else:
+        index creation. If you don't specify nothing in delete_batch_size arguments the method it is going to delete
+        values of the same size of the insertion"""
+        if delete_batch_size:
             self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batch_size=delete_batch_size,
                                    timeout=False)
-            self.execute_batch_inserts(insert_list, tablename=tablename,
-                                       batch_size=insert_batch_size)
+            if columns:
+                self.execute_batch_inserts_specific_columns(insert_list, tablename=tablename, batch_size=insert_batch_size,
+                                            columns=columns)
+            else:
+                self.execute_batch_inserts(insert_list, tablename=tablename, batch_size=insert_batch_size)
+        else:
+            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batch_size=insert_batch_size,
+                                   timeout=False)
+            if columns:
+                self.execute_batch_inserts_specific_columns(insert_list, tablename=tablename, batch_size=insert_batch_size,
+                                                            columns=columns)
+            else:
+                self.execute_batch_inserts(insert_list, tablename=tablename, batch_size=insert_batch_size)

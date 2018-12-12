@@ -271,15 +271,15 @@ class Postgre(object):
             cur.close()
             conn.close()
 
-    def postgre_from_dataframe(self, tablename, dataframe_object, method, batch_size, 
+    def dataframe_to_postgre(self, tablename, dataframe_object, method, batch_size, 
                                merge_key=None):
         """This method it is perform to insert a Dataframe python object into a DWH table.
         The insert method can be done by appending elements to a table for that purpose use
         the append opction in the method param. If you want to update a table by a column, you 
         need to use the rebuilt method and select the merge_key column of your DWH table."""
 
-        df_columns = dataframe_object.columns[1:].tolist()
-        df_values = dataframe_object.values[:, 1:].tolist()
+        df_columns = dataframe_object.columns[0:].tolist()
+        df_values = dataframe_object.values[:, 0:].tolist()
 
         if method not in ('rebuilt', 'append'):
             raise ValueError("""Invalid method. Choose rebuild method if you want to 

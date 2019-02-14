@@ -1,4 +1,4 @@
-gitimport os
+import os
 import pytest
 import psycopg2
 from dotenv import load_dotenv,find_dotenv

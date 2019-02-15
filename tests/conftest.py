@@ -28,12 +28,8 @@ def pysoni_client_invalid_connection_options():
     return Postgre(port='5432', host='localhost', user='cwtest',
                    dbname='coverwalletdwh', password='',
                    connection_options='-c statement_timeouts=1')
-<<<<<<< Updated upstream
-    
-=======
 
 @pytest.fixture
 def pysoni_client_connection_with_envvars():
     return Postgre(port='5432', host='localhost', user=os.environ['POSTGRES_USER'],
                    dbname=os.environ['POSTGRES_DB'], password='')
->>>>>>> Stashed changes

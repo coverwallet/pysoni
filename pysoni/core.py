@@ -165,18 +165,18 @@ class Postgre(object):
             else:
                 cur.execute(self.read_query(queryname, path_sql_script))
                 result = cur.fetchall()
-
             columns_names = [i[0] for i in cur.description]
             if types is False:
                 query_results = {'results': result, 'keys': columns_names}
             else:
                 types = [i[1] for i in cur.description]
                 type_string = ','.join(str(i) for i in types)
-                cur.execute(f"select pg_type.oid, pg_type.typname from pg_type where pg_type.oid in {type_string}")
+                cur.execute(f"select pg_type.oid, pg_type.typname from pg_type where pg_type.oid in ({type_string})")
                 type_res = cur.fetchall()
                 type_res_dict = {i[0]: i[1] for i in type_res}
                 type_list = [type_res_dict.get(i, 'text') for i in types]
                 query_results = {'results': result, 'keys': columns_names, 'types': type_list}
+                
         finally:
             cur.close()
             conn.close()
@@ -216,18 +216,19 @@ class Postgre(object):
         """Method to perform  postgres transactions as an example rename columns, truncate tables etc. By default
         the transaction it is commited after the execution if you want set up a sleep between both events or
         different transactions use the timesleep parameter"""
+        is_operation_succesful = False
         conn = self.connection()
         cur = conn.cursor()
         try:
             cur.execute(statement)
-            print("Statement execute succesfully")
             sleep(timesleep)
             conn.commit()
-            print("Statement run succesfully")
+            is_operation_succesful = True
 
         finally:
             cur.close()
             conn.close()
+            return is_operation_succesful
 
     def postgre_multiple_statements(self, statements, timesleep=None):
         """Method to execute multiple db transactions. The transactions are executed sequentially.

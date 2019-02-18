@@ -158,24 +158,25 @@ class Postgre(object):
         conn = self.connection()
         cur = conn.cursor()
         query_results = {}
+        column_name_index = 0
+        column_type_index = 1
         try:
             if not sql_script:
                 cur.execute(queryname)
-                result = cur.fetchall()
             else:
                 cur.execute(self.read_query(queryname, path_sql_script))
-                result = cur.fetchall()
-            columns_names = [i[0] for i in cur.description]
+            result = cur.fetchall()
+            columns_names = [cursor_metadata[column_name_index] for cursor_metadata in cur.description]
             if types is False:
                 query_results = {'results': result, 'keys': columns_names}
             else:
-                types = [i[1] for i in cur.description]
-                type_string = ','.join(str(i) for i in types)
+                types_of_columns = [cursor_metadata[column_type_index] for cursor_metadata in cur.description]
+                type_string = ','.join(str(type_code) for type_code in types_of_columns)
                 cur.execute(f"select pg_type.oid, pg_type.typname from pg_type where pg_type.oid in ({type_string})")
-                type_res = cur.fetchall()
-                type_res_dict = {i[0]: i[1] for i in type_res}
-                type_list = [type_res_dict.get(i, 'text') for i in types]
-                query_results = {'results': result, 'keys': columns_names, 'types': type_list}
+                list_of_types = cur.fetchall()
+                oid_name_type_dict = {type_column_tuple[0]: type_column_tuple[1] for type_column_tuple in list_of_types}
+                type_name_list = [oid_name_type_dict.get(type_code, 'text') for type_code in types_of_columns]
+                query_results = {'results': result, 'keys': columns_names, 'types': type_name_list}
                 
         finally:
             cur.close()

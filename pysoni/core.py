@@ -151,17 +151,23 @@ class Postgre(object):
             cur.close()
             conn.close()
 
-    def execute_query(self, queryname, types=False, sql_script=None, path_sql_script=None):
-        """This method is used to perform to execute an sql query.
-        If we want to make dynamic queries the attributes should be pass as the following example
-        select * from hoteles where city='{0}'".format('Madrid')"""
+    def execute_query(self, queryname, types=False, path_sql_script=None):
+        """This method is used to execute an sql query. With default parameters, it returns a dictionary
+        with two keys: 'results' provides a list with the results of the query and 'keys' provides a list
+        with the names of each of the columns returned. If types = true, it also returns a key 'types' inside
+        the dictionary that contains the type of each of the columns. If a path in "path_sql_script" is 
+        specified, the query is read from the file named 'queryname' (with the SQL query) that is located 
+        in that specific path is used.
+        If we want to make dynamic queries, the attributes should be passed as in the following example:
+        place = "Madrid"
+        f"select * from hotels where city='{place}'" """
         conn = self.connection()
         cur = conn.cursor()
         query_results = {}
         column_name_index = 0
         column_type_index = 1
         try:
-            if sql_script:
+            if path_sql_script:
                 cur.execute(self.read_query(queryname, path_sql_script))
             else:
                 cur.execute(queryname)

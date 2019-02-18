@@ -151,45 +151,43 @@ class Postgre(object):
             cur.close()
             conn.close()
 
-    def execute_query(self, queryname, types=False, sql_script=None, path_sql_script=None):
-        """This method it is perform to execute an sql query.
-        If we want to make dynamic queries the attributes should be pass as the following example
-        select * from hoteles where city='{0}'".format('Madrid')"""
+    def execute_query(self, queryname, types=False, path_sql_script=None):
+        """This method is used to execute an sql query. With default parameters, it returns a dictionary
+        with two keys: 'results' provides a list with the results of the query and 'keys' provides a list
+        with the names of each of the columns returned. If types = true, it also returns a key 'types' inside
+        the dictionary that contains the type of each of the columns. If a path in "path_sql_script" is 
+        specified, the query is read from the file named 'queryname' (with the SQL query) that is located 
+        in that specific path is used.
+        If we want to make dynamic queries, the attributes should be passed as in the following example:
+        place = "Madrid"
+        f"select * from hotels where city='{place}'" """
         conn = self.connection()
         cur = conn.cursor()
+        query_results = {}
+        column_name_index = 0
+        column_type_index = 1
         try:
-            if not sql_script:
-                cur.execute(queryname)
-                res = cur.fetchall()
-            else:
+            if path_sql_script:
                 cur.execute(self.read_query(queryname, path_sql_script))
-                res = cur.fetchall()
-            # we get the information about the columns names.
-            columns_names = [i[0] for i in cur.description]
-            if types is False:
-                query_results = {'results': res, 'keys': columns_names}
-                # we close the cursor and connection.
-                cur.close()
-                conn.close()
-                return query_results
             else:
-                types = [i[1] for i in cur.description]
-                type_string = ','.join(str(i) for i in types)
-                cur.execute("select pg_type.oid, pg_type.typname from pg_type where pg_type.oid in ({0})".
-                            format(type_string))
-                type_res = cur.fetchall()
-                type_res_dict = {i[0]: i[1] for i in type_res}
-                type_list = [type_res_dict.get(i, 'text') for i in types]
-                query_results = {'results': res, 'keys': columns_names, 'types': type_list}
-                # we close the cursor and connection.
-                cur.close()
-                conn.close()
-                return query_results
-        except psycopg2.Error as e:
+                cur.execute(queryname)
+            cursor_info = cur.fetchall()
+            columns_names = [cursor_metadata[column_name_index] for cursor_metadata in cur.description]
+            if types:
+                types_of_columns = [cursor_metadata[column_type_index] for cursor_metadata in cur.description]
+                type_string = ','.join(str(type_code) for type_code in types_of_columns)
+                cur.execute(f"select pg_type.oid, pg_type.typname from pg_type where pg_type.oid in ({type_string})")
+                list_of_types = cur.fetchall()
+                oid_name_type_dict = {type_column_tuple[0]: type_column_tuple[1] for type_column_tuple in list_of_types}
+                type_name_list = [oid_name_type_dict.get(type_code, 'text') for type_code in types_of_columns]
+                query_results = {'results': cursor_info, 'keys': columns_names, 'types': type_name_list}
+            else:
+                query_results = {'results': cursor_info, 'keys': columns_names}
+                
+        finally:
             cur.close()
             conn.close()
-            raise psycopg2.Error("We found the following issue: {0}"
-                                 .format(e))
+            return query_results
 
     def get_schema(self, schema, metadata=False):
         """This method it is perform to get all the schema information from postgresql."""

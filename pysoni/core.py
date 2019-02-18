@@ -217,19 +217,18 @@ class Postgre(object):
         """Method to perform  postgres transactions as an example rename columns, truncate tables etc. By default
         the transaction it is commited after the execution if you want set up a sleep between both events or
         different transactions use the timesleep parameter"""
-        is_operation_succesful = False
         conn = self.connection()
         cur = conn.cursor()
         try:
             cur.execute(statement)
+            print("Statement execute succesfully")
             sleep(timesleep)
             conn.commit()
-            is_operation_succesful = True
+            print("Statement run succesfully")
 
         finally:
             cur.close()
             conn.close()
-            return is_operation_succesful
 
     def postgre_multiple_statements(self, statements, timesleep=None):
         """Method to execute multiple db transactions. The transactions are executed sequentially.

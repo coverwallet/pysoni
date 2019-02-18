@@ -161,15 +161,13 @@ class Postgre(object):
         column_name_index = 0
         column_type_index = 1
         try:
-            if not sql_script:
-                cur.execute(queryname)
-            else:
+            if sql_script:
                 cur.execute(self.read_query(queryname, path_sql_script))
+            else:
+                cur.execute(queryname)
             cursor_info = cur.fetchall()
             columns_names = [cursor_metadata[column_name_index] for cursor_metadata in cur.description]
-            if types is False:
-                query_results = {'results': cursor_info, 'keys': columns_names}
-            else:
+            if types:
                 types_of_columns = [cursor_metadata[column_type_index] for cursor_metadata in cur.description]
                 type_string = ','.join(str(type_code) for type_code in types_of_columns)
                 cur.execute(f"select pg_type.oid, pg_type.typname from pg_type where pg_type.oid in ({type_string})")
@@ -177,6 +175,8 @@ class Postgre(object):
                 oid_name_type_dict = {type_column_tuple[0]: type_column_tuple[1] for type_column_tuple in list_of_types}
                 type_name_list = [oid_name_type_dict.get(type_code, 'text') for type_code in types_of_columns]
                 query_results = {'results': cursor_info, 'keys': columns_names, 'types': type_name_list}
+            else:
+                query_results = {'results': cursor_info, 'keys': columns_names}
                 
         finally:
             cur.close()

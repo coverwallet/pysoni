@@ -21,8 +21,7 @@ def test_postgre_to_dict_with_types_and_script(
     filename = 'test_postgre_to_dict'
     path = 'tests/fixtures/'
     
-    expected_results = [[{'greetings': {'value': 'hello', 'type': 'text'}},
-        {'mynum': {'value': 2, 'type': 'int4'}}, 
+    expected_results = [[{'mynum': {'value': 1, 'type': 'int4'}}, 
         {'test_date': {'value': datetime.date(datetime(2001, 9, 28)), 
                         'type': 'date'}}]]
     results = pysoni_client_connection_with_envvars.postgre_to_dict(

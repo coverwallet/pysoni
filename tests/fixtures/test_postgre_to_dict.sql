@@ -1,1 +1,1 @@
-SELECT 'hello' AS greetings, 2 as mynum, date '2001-09-28' AS test_date;
+SELECT 1 as mynum, date '2001-09-28' AS test_date;

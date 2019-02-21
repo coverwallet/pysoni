@@ -323,15 +323,14 @@ class Postgre(object):
         query. Each element is in turn made up of a list of dictionaries in
         which the keys are the name of the columns and the value is the the 
         actual value of the row for that specific column. If types=True, it 
-        also returns the type of each column inside each dictionary.
-        If we want to make dynamic queries the attributes should be pass as the following example
-        place = "Madrid"
-        f"select * from hotels where city='{place}'" """
-        if types:
-            results = self.execute_query(query, types=True,
+        also returns the type of each column inside each dictionary."""
+        
+        results = self.execute_query(query, types=types,
                         path_sql_script=path_sql_script)
-            columns = results['keys']
-            rows = results['results']
+        columns = results['keys']
+        rows = results['results']
+
+        if types:
             types = results['types']
             list_of_dict = []
             for row in rows:
@@ -339,12 +338,8 @@ class Postgre(object):
                     for value, column, type_ in zip(row, columns, types)])
             return list_of_dict
         else:
-            results = self.execute_query(query, 
-                        path_sql_script=path_sql_script)
-            columns = results['keys']
             rows = results['results']
             list_of_dict = []
-
             for row in rows:
                 list_of_dict.append([{column: register} for register, 
                     column in zip(row, columns)])

@@ -348,11 +348,11 @@ class Postgre(object):
         Different from 'postgre_to_dict', here each element of each row has
         its own dictionary, and inside the dictionary it is contained the 
         value, the name of the column and the type of the column (if True)"""
-            
+
+        results = self.execute_query(query, types=types, path_sql_script=path_sql_script)
+        columns, rows = results['keys'], results['results']
+
         if types:
-            results = self.execute_query(query, types=True, path_sql_script=path_sql_script)
-            columns = results['keys']
-            rows = results['results']
             types = results['types']
             list_of_dict = []
             for row in rows:
@@ -360,14 +360,11 @@ class Postgre(object):
                     list_of_dict.append({column: {'value': value, 'type': type_}})
             return list_of_dict
         else:
-            results = self.execute_query(query, path_sql_script=path_sql_script)
-            columns = results['keys']
-            rows = results['results']
             list_of_dict = []
             for row in rows:
                 row_dict = {}
-                for register, column in zip(row, columns):
-                    row_dict.update({column: register})
+                for value, column in zip(row, columns):
+                    row_dict.update({column: value})
                 list_of_dict.append(row_dict)
             return list_of_dict
 

@@ -326,7 +326,6 @@ class Postgre(object):
             columns = results['keys']
             rows = results['results']
             list_of_dict = []
-
             for row in rows:
                 list_of_dict.append([{column: register} for register, column in zip(row, columns)])
             return list_of_dict
@@ -341,12 +340,27 @@ class Postgre(object):
                                      in zip(row, columns, types)])
             return list_of_dict
 
-    def postgre_to_dict_list(self, query, types=False, sql_script=False, path_sql_script=False):
-        """This method it is perform to execute an sql query and it would retrieve a list of lists of diccionaries.
-        If we want to make dynamic queries the attributes should be pass as the following example
-        f"select * from hoteles where city='Madrid'"""
-        if types is False:
-            results = self.execute_query(query, sql_script=sql_script, path_sql_script=path_sql_script)
+    def postgre_to_dict_list(self, query, types=False, path_sql_script=False):
+        """This method is used to execute an sql query and return a list of 
+        dictionaries. Each dictionary contais the information of each element
+        of the result (value + column). If types=True, the dictionary  also
+        includes the type of the column.
+        Different from 'postgre_to_dict', here each element of each row has
+        its own dictionary, and inside the dictionary it is contained the 
+        value, the name of the column and the type of the column (if True)"""
+            
+        if types:
+            results = self.execute_query(query, types=True, path_sql_script=path_sql_script)
+            columns = results['keys']
+            rows = results['results']
+            types = results['types']
+            list_of_dict = []
+            for row in rows:
+                for value, column, type_ in zip(row, columns, types):
+                    list_of_dict.append({column: {'value': value, 'type': type_}})
+            return list_of_dict
+        else:
+            results = self.execute_query(query, path_sql_script=path_sql_script)
             columns = results['keys']
             rows = results['results']
             list_of_dict = []
@@ -356,16 +370,7 @@ class Postgre(object):
                     row_dict.update({column: register})
                 list_of_dict.append(row_dict)
             return list_of_dict
-        else:
-            results = self.execute_query(query, types=True, sql_script=sql_script, path_sql_script=path_sql_script)
-            columns = results['keys']
-            rows = results['results']
-            types = results['types']
-            list_of_dict = []
-            for row in rows:
-                for value, column, type_ in zip(row, columns, types):
-                    list_of_dict.append({column: {'value': value, 'type': type}})
-            return list_of_dict
+
 
     def postgre_to_tuple(self, query, sql_script=False, path_sql_script=False):
         """This method it is perform to execute an sql query and it would retrieve a list of tuples.

@@ -275,7 +275,7 @@ class Postgre(object):
         The insert method can be done by appending elements to a table for that purpose use
         the append opction in the method param. If you want to update a table by a column, you 
         need to use the rebuilt method and select the merge_key column of your DWH table."""
-
+        dataframe_object.fillna(value=None, inplace=True)
         df_columns = dataframe_object.columns[0:].tolist()
         df_values = dataframe_object.values[:, 0:].tolist()
 

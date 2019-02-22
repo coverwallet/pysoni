@@ -300,17 +300,20 @@ class Postgre(object):
                                                         insert_rows=df_values, batch_size=batch_size)
 
 
-    def postgre_to_dataframe(self, query, convert_types=True, sql_script=None, path_sql_script=None):
-        """This method it is perform to execute an sql query and it would retrieve a pandas Dataframe.
+    def postgre_to_dataframe(self, query, convert_types=True, path_sql_script=None):
+        """This method is used to execute a sql query and return a pandas Dataframe with the results.
+        If 'convert_types' = True, the time variables are converted to timestamp format and the date variables
+        are converted to YYYY-MM-DD format.
         If we want to make dynamic queries the attributes should be pass as the following example
-        "select * from hoteles where city='{0}'".format('Madrid')"""
-        results = self.execute_query(query, types=convert_types, sql_script=sql_script,
+        place = "Madrid"
+        f"select * from hotels where city='{place}'" """
+        results = self.execute_query(query, types=convert_types,
                                      path_sql_script=path_sql_script)
         df = DataFrame.from_records(results['results'], columns=results['keys'])
 
         if convert_types:
             for column_data_type, column_name in zip(results['types'], results['keys']):
-                if column_data_type in ('timestamp', 'timestampz'):
+                if column_data_type in ('timestamp', 'timestamptz'):
                     df[column_name] = to_datetime(df[column_name])
                 elif column_data_type == 'date':
                     df[column_name] = to_datetime(
@@ -345,31 +348,33 @@ class Postgre(object):
                     column in zip(row, columns)])
             return list_of_dict
 
+    def postgre_to_dict_list(self, query, types=False, path_sql_script=False):
+        """This method is used to execute an sql query and return a list of 
+        dictionaries. Each dictionary contais the information of each element
+        of the result (value + column). If types=True, the dictionary  also
+        includes the type of the column.
+        Different from 'postgre_to_dict', here each element of each row has
+        its own dictionary, and inside the dictionary it is contained the 
+        value, the name of the column and the type of the column (if True)"""
 
-    def postgre_to_dict_list(self, query, types=False, sql_script=False, path_sql_script=False):
-        """This method it is perform to execute an sql query and it would retrieve a list of lists of diccionaries.
-        If we want to make dynamic queries the attributes should be pass as the following example
-        f"select * from hoteles where city='Madrid'"""
-        if types is False:
-            results = self.execute_query(query, sql_script=sql_script, path_sql_script=path_sql_script)
-            columns = results['keys']
-            rows = results['results']
-            list_of_dict = []
-            for row in rows:
-                row_dict = {}
-                for register, column in zip(row, columns):
-                    row_dict.update({column: register})
-                list_of_dict.append(row_dict)
-            return list_of_dict
-        else:
-            results = self.execute_query(query, types=True, sql_script=sql_script, path_sql_script=path_sql_script)
-            columns = results['keys']
-            rows = results['results']
+        results = self.execute_query(query, types=types, path_sql_script=path_sql_script)
+        columns, rows = results['keys'], results['results']
+
+        if types:
             types = results['types']
+
             list_of_dict = []
             for row in rows:
                 for value, column, type_ in zip(row, columns, types):
-                    list_of_dict.append({column: {'value': value, 'type': type}})
+                    list_of_dict.append({column: {'value': value, 'type': type_}})
+            return list_of_dict
+        else:
+            list_of_dict = []
+            for row in rows:
+                row_dict = {}
+                for value, column in zip(row, columns):
+                    row_dict.update({column: value})
+                list_of_dict.append(row_dict)
             return list_of_dict
 
     def postgre_to_tuple(self, query, sql_script=False, path_sql_script=False):
@@ -377,7 +382,7 @@ class Postgre(object):
         If we want to make dynamic queries the attributes should be pass as the following example
         f"select * from hoteles where city='Madrid'")"""
 
-        results = self.execute_query(query, sql_script=sql_script, path_sql_script=path_sql_script)
+        results = self.execute_query(query, path_sql_script=path_sql_script)
         return results['results']
 
     def update_fields(self, tablename, field, values, timeout=True, multiproccesing=False):

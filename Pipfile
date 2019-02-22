@@ -9,6 +9,7 @@ coverage = "*"
 ipython = "*"
 python-dotenv = "*"
 pytest-mock = "*"
+pandas = "*"
 
 [packages]
 pandas = ">=0.22.0"

@@ -368,13 +368,12 @@ class Postgre(object):
                 list_of_dict.append(row_dict)
             return list_of_dict
 
-
     def postgre_to_tuple(self, query, sql_script=False, path_sql_script=False):
         """This method it is perform to execute an sql query and it would retrieve a list of tuples.
         If we want to make dynamic queries the attributes should be pass as the following example
         f"select * from hoteles where city='Madrid'")"""
 
-        results = self.execute_query(query, sql_script=sql_script, path_sql_script=path_sql_script)
+        results = self.execute_query(query, path_sql_script=path_sql_script)
         return results['results']
 
     def update_fields(self, tablename, field, values, timeout=True, multiproccesing=False):

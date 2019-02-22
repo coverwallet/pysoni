@@ -300,17 +300,20 @@ class Postgre(object):
                                                         insert_rows=df_values, batch_size=batch_size)
 
 
-    def postgre_to_dataframe(self, query, convert_types=True, sql_script=None, path_sql_script=None):
-        """This method it is perform to execute an sql query and it would retrieve a pandas Dataframe.
+    def postgre_to_dataframe(self, query, convert_types=True, path_sql_script=None):
+        """This method is used to execute a sql query and return a pandas Dataframe with the results.
+        If 'convert_types' = True, the time variables are converted to timestamp format and the date variables
+        are converted to YYYY-MM-DD format.
         If we want to make dynamic queries the attributes should be pass as the following example
-        "select * from hoteles where city='{0}'".format('Madrid')"""
-        results = self.execute_query(query, types=convert_types, sql_script=sql_script,
+        place = "Madrid"
+        f"select * from hotels where city='{place}'" """
+        results = self.execute_query(query, types=convert_types,
                                      path_sql_script=path_sql_script)
         df = DataFrame.from_records(results['results'], columns=results['keys'])
 
         if convert_types:
             for column_data_type, column_name in zip(results['types'], results['keys']):
-                if column_data_type in ('timestamp', 'timestampz'):
+                if column_data_type in ('timestamp', 'timestamptz'):
                     df[column_name] = to_datetime(df[column_name])
                 elif column_data_type == 'date':
                     df[column_name] = to_datetime(

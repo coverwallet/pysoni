@@ -4,7 +4,7 @@ from random import randrange
 import psycopg2
 from psycopg2.extras import execute_values
 from psycopg2.extensions import parse_dsn
-from pandas import DataFrame, to_datetime
+from pandas import DataFrame, to_datetime, notnull
 from toolz import groupby
 
 from . import helpers
@@ -274,30 +274,32 @@ class Postgre(object):
         """This method it is perform to insert a Dataframe python object into a DWH table.
         The insert method can be done by appending elements to a table for that purpose use
         the append opction in the method param. If you want to update a table by a column, you 
-        need to use the rebuilt method and select the merge_key column of your DWH table."""
-        dataframe_object.fillna(value=None, inplace=True)
+        need to use the rebuilt method and select the merge_key column of your DWH table.
+        """
+        dataframe_object = dataframe_object.where((notnull(dataframe_object)), None)
         df_columns = dataframe_object.columns[0:].tolist()
         df_values = dataframe_object.values[:, 0:].tolist()
 
-        if method not in ('rebuilt', 'append'):
-            raise ValueError("""Invalid method. Choose rebuild method if you want to 
-                                 update a table using a column, choose append if you want 
-                                just to update it.""")
+        if method not in ('rebuild', 'append'):
+            raise ValueError("""Invalid method. Select method='rebuild' if you
+                want to update a table using a column. Select method='append'
+                if you want just to update it.""")
 
-        if method == 'rebuilt':
+        if method == 'rebuild':
             if not merge_key:
-                raise ValueError("""To rebuilt a table you must select 
-                                 merge_key with the table column""")
+                raise ValueError("""To rebuilt a table you must select a
+                    merge_key with the table column""")
 
             df_delete_values = dataframe_object[merge_key].unique().tolist()
             self.update_table(tablename=tablename, merge_key=merge_key,
-                              insert_batch_size=batch_size, delete_batch_size=batch_size,
-                              insert_list=df_values, delete_list=df_delete_values, 
-                              columns=df_columns)
+                insert_batch_size=batch_size, delete_batch_size=batch_size,
+                insert_list=df_values, delete_list=df_delete_values,
+                columns=df_columns)
 
         elif method == 'append':
-            self.execute_batch_inserts_specific_columns(tablename=tablename, columns=df_columns,
-                                                        insert_rows=df_values, batch_size=batch_size)
+            self.execute_batch_inserts_specific_columns(tablename=tablename,
+                columns=df_columns, insert_rows=df_values,
+                batch_size=batch_size)
 
 
     def postgre_to_dataframe(self, query, convert_types=True, path_sql_script=None):
@@ -377,7 +379,7 @@ class Postgre(object):
                 list_of_dict.append(row_dict)
             return list_of_dict
 
-    def postgre_to_tuple(self, query, sql_script=False, path_sql_script=False):
+    def postgre_to_tuple(self, query, path_sql_script=False):
         """This method it is perform to execute an sql query and it would retrieve a list of tuples.
         If we want to make dynamic queries the attributes should be pass as the following example
         f"select * from hoteles where city='Madrid'")"""

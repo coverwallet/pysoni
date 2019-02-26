@@ -297,8 +297,8 @@ class Postgre(object):
                 columns=df_columns)
 
         elif method == 'append':
-            self.execute_batch_inserts_specific_columns(tablename=tablename,
-                columns=df_columns, insert_rows=df_values,
+            self.execute_batch_inserts_specific_columns(
+                tablename=tablename, columns=df_columns, insert_rows=df_values,
                 batch_size=batch_size)
 
 

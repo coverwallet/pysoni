@@ -2,7 +2,10 @@ version: 2
 jobs:
   build:
     docker:
-      - image: gcr.io/coverwallet-sre/circleci-pysoni:2
+      - image: gcr.io/coverwallet-sre/circleci-pysoni:1
+        auth:
+          username: _json_key 
+          password: $GCLOUD_SERVICE_KEY
         environment:
           POSTGRES_USER: cw_test
           POSTGRES_DB: coverwalletdwh

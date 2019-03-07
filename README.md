@@ -34,10 +34,12 @@ $ pip install pysoni
 Additionally you can install directly from github.
 
 ```
-$ pip install git+https://github.com/coverwallet/pysoni.git@<tag_name>#egg=pysoni
+$ pip install git+ssh://git@github.com/coverwallet/pysoni.git@<tag_name>#egg=pysoni
 ```
 If you are installing pysoni in pipenv enviroment, use the following command.
 
 ```
-$ pipenv install -e git+https://github.com/coverwallet/pysoni.git@<tag_name>#egg=pysoni
+$ pipenv install -e git+ssh://git@github.com/coverwallet/pysoni.git@<tag_name>#egg=pysoni
 ```
+
+If it is preferred to use http instead of ssh, just change the 'git+ssh' by 'git+http'.

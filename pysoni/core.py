@@ -163,10 +163,10 @@ class Postgre(object):
         f"select * from hotels where city='{place}'" """
         conn = self.connection()
         cur = conn.cursor()
-        query_results = {}
         column_name_index = 0
         column_type_index = 1
         try:
+            query_results = {}
             if path_sql_script:
                 cur.execute(self.read_query(queryname, path_sql_script))
             else:
@@ -183,11 +183,12 @@ class Postgre(object):
                 query_results = {'results': cursor_info, 'keys': columns_names, 'types': type_name_list}
             else:
                 query_results = {'results': cursor_info, 'keys': columns_names}
-                
+            return query_results  
+        
         finally:
             cur.close()
             conn.close()
-            return query_results
+            
 
     def get_schema(self, schema, metadata=False):
         """This method it is perform to get all the schema information from postgresql."""

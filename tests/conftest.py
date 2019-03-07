@@ -32,4 +32,5 @@ def pysoni_client_invalid_connection_options():
 @pytest.fixture
 def pysoni_client_connection_with_envvars():
     return Postgre(port='5432', host='localhost', user=os.environ['POSTGRES_USER'],
-                   dbname=os.environ['POSTGRES_DB'], password='')
+                   dbname=os.environ['POSTGRES_DB'], password='',
+                   connection_options='-c statement_timeout=30000')

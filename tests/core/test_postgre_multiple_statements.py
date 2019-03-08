@@ -10,7 +10,7 @@ def test_postgre_statement_with_psycopg2_api(
     excepted_statements = """CREATE TABLE temp (cover text);ALTER TABLE 
                              temp rename to temp_prod; DROP TABLE temp_prod"""
 
-    pysoni_client_connection_with_envvars.postgre_statement(
+    pysoni_client_connection_with_envvars.postgre_multiple_statements(
         ["CREATE TABLE temp (cover text)", "ALTER TABLE temp RENAME TO temp_prod",
          "DROP TABLE temp_prod"])
 

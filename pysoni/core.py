@@ -221,52 +221,50 @@ class Postgre(object):
 
 
     def postgre_statement(self, statement, timesleep=0):
-        """Method to perform  postgres transactions as an example rename columns, truncate tables etc. By default
-        the transaction it is commited after the execution if you want set up a sleep between both events or
-        different transactions use the timesleep parameter"""
+        """Method to perform postgres transactions as an example rename columns,
+        truncate tables, grant permissions to users etc,.
+        Arguments
+        ----------
+        statement : string
+            String representing the transacion we want to execute
+        timesleep : int
+            Number with the seconds we want to wait between the transaction is  
+            executed and commited time.
+        """
         conn = self.connection()
         cur = conn.cursor()
         try:
             cur.execute(statement)
-            print("Statement execute succesfully")
             sleep(timesleep)
             conn.commit()
-            print("Statement run succesfully")
-
         finally:
             cur.close()
             conn.close()
 
     def postgre_multiple_statements(self, statements, timesleep=None):
-        """Method to execute multiple db transactions. The transactions are executed sequentially.
-        A list of string with the transactions we want to execute need to be we passed on the statements argument.
-        You can use a sleep between transactions with the timesleep parameter.
-        All peding transaction will be commited before any expection it is raised."""
+        """Method to perform multiple postgres transactions as an example rename columns,
+        truncate tables, grant permissions to users etc..All transactions are commited
+        at the same time.
+        Arguments
+        ----------
+        statement : list, tuple
+            Iterable of strings representing the transacion.
+            All transactions are executed following the order of the iterable
+        timesleep : int
+            Number with the seconds we want to wait between alls transactions are 
+            executed and commited time.
+        """
 
-        statement_type = type(statements)
-        sample = statements[randrange(0, len(statements))]
-        if statement_type is list and type(sample) is str:
-            raise TypeError('Statements argument need to be a list of strings')
-
-        if not timesleep:
-            timesleep = 0
-        statement_counter = 0
+        helpers.validate_types(statements, expected_types=[list, tuple], 
+                               contained_types=[str])
 
         conn = self.connection()
         cur = conn.cursor()
         try:
-            for statement in statements:
-                cur.execute(statement)
-                sleep(timesleep)
-                statement_counter += 1
-        except Exception as e:
-            unresolved_statements = '; '.join(statement for statement in statements[statement_counter:])
-            print(f"Script failed in this transaction {statements[statement_counter]}.")
-            print("The following transactions were not executed: "
-                  f"{unresolved_statements}")
-            print(repr(e))
-        finally:
+            cur.execute(f";".join(statements))
+            sleep(timesleep)
             conn.commit()
+        finally:
             cur.close()
             conn.close()
 

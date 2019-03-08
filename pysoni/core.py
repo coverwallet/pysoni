@@ -81,38 +81,38 @@ class Postgre(object):
             delete_batch, remaining_rows = remaining_rows[:batch_size], remaining_rows[batch_size:]
 
 
-    def drop_tables(self, table_names, timesleep=2):
-        """Drop tables from a database sequentially, timesleep between transactions it is set up to 2 seconds by default,
-        all transactions are commited at the same time"""
+    def drop_tables(self, table_names, wait_time=0, batch=True):
+        """Delete a set of DB tables.
+
+        Arguments
+        ----------
+        tablelist : list, tuple
+            Iterable of strings representing the names of the tables to drop
+        wait_time : int
+            Number of seconds that we'll wait before committing the operation
+            to the DB
+        batch : boolean
+            Defines if the operation should be done in a batch
+        """
+
+        helpers.validate_types(table_names, expected_types=[list, tuple], contained_types=[str])
+
         conn = self.connection()
         cur = conn.cursor()
 
-        table_type = type(table_names)
-        sample_type = table_names[0]
-
-        if not table_type in (list, tuple) or not (sample_type is str):
-            raise ValueError("Input data doesn't have the correct format. It should be a list/tuple of strings")
-
         try:
-            for table in table_names:
-                print(f"We delete the following table {table}.Interrupt the script before it's too late.")
-                sleep(timesleep)
-                cur.execute(f'DROP TABLE "{table}";')
-
-            conn.commit()
-            print('Tables were successfully removed')
+            if batch:
+                statement = f"DROP TABLES {', '.join(table_names)}"
+                self.postgre_statement(statement, timesleep=wait_time)
+            else:
+                for table_name in table_names:
+                    statement = f"DROP TABLE {table_name}"
+                    self.postgre_statement(statement, timesleep=wait_time)
 
         finally:
             cur.close()
             conn.close()
 
-    def drop_batch_tables(self, tablelist, timeout=True):
-        "This method it is perform to delete a batch of tables , please we aware."
-        if type(tablelist) in (list, tuple) and tablelist[0] is str:
-            drop_tables = ','.join(table for table in tablelist)
-            self.postgre_statement(f"DROP TABLES {drop_tables}", timesleep=timeout)
-        else:
-            raise TypeError("Tablelist parameter not correct, a list or tuple of strings is needed")
 
     def execute_batch_inserts(self, insert_rows, tablename, batch_size=1000):
         """Insert rows in a table using batches, the default batch size it is set to 1000."""

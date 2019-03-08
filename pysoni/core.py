@@ -241,7 +241,7 @@ class Postgre(object):
             cur.close()
             conn.close()
 
-    def postgre_multiple_statements(self, statements, timesleep=None):
+    def postgre_multiple_statements(self, statements, timesleep=0):
         """Method to perform multiple postgres transactions as an example rename columns,
         truncate tables, grant permissions to users etc..All transactions are commited
         at the same time.

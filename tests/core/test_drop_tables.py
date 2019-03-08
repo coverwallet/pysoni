@@ -18,11 +18,11 @@ def test_drop_tables_with_batch_false_executes_multiple_statements(pysoni_client
     mocker):
     mocker.patch.object(pysoni_client, "connection")
     mocker.patch.object(pysoni_client, "postgre_statement")
-    
-    expected_statement = "DROP TABLE table1"
+
+    expected_first_statement = "DROP TABLE table1"
 
     pysoni_client.drop_tables(table_names=['table1'],
                               wait_time=0, batch=False)
     pysoni_client.postgre_statement.assert_called_once_with(
-        expected_statement,
+        expected_first_statement,
         timesleep=0)

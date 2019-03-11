@@ -97,21 +97,12 @@ class Postgre(object):
 
         helpers.validate_types(table_names, expected_types=[list, tuple], contained_types=[str])
 
-        conn = self.connection()
-        cur = conn.cursor()
-
-        try:
-            if batch:
-                statement = f"DROP TABLES {', '.join(table_names)}"
-                self.postgre_statement(statement, timesleep=wait_time)
-            else:
-                for table_name in table_names:
-                    statement = f"DROP TABLE {table_name}"
-                    self.postgre_statement(statement, timesleep=wait_time)
-
-        finally:
-            cur.close()
-            conn.close()
+        if batch:
+            statement = f"DROP TABLES {', '.join(table_names)}"
+            self.postgre_statement(statement, timesleep=wait_time)
+        else:
+            for table_name in table_names:
+                self.postgre_statement(f"DROP TABLE {table_name}", timesleep=wait_time)
 
 
     def execute_batch_inserts(self, insert_rows, tablename, batch_size=1000):

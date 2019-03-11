@@ -236,8 +236,8 @@ class Postgre(object):
         try:
             cur.execute(statement)
             sleep(timesleep)
-            conn.commit()
         finally:
+            conn.commit()
             cur.close()
             conn.close()
 
@@ -261,10 +261,10 @@ class Postgre(object):
         conn = self.connection()
         cur = conn.cursor()
         try:
-            cur.execute(f";".join(statements))
+            cur.execute(";".join(statements))
             sleep(timesleep)
-            conn.commit()
         finally:
+            conn.commit()
             cur.close()
             conn.close()
 

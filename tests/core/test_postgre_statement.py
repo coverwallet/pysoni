@@ -1,7 +1,5 @@
 import pytest 
 import psycopg2
-from dotenv import load_dotenv, find_dotenv
-
 
 def test_postgre_statement_with_psycopg2_api(pysoni_client, mocker):
     test_postgre_statement_with_psycopg2_api

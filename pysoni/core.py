@@ -247,7 +247,7 @@ class Postgre(object):
         at the same time.
         Arguments
         ----------
-        statement : list, tuple
+        statements : list, tuple
             Iterable of strings representing the transacion.
             All transactions are executed following the order of the iterable
         timesleep : int

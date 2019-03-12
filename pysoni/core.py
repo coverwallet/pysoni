@@ -224,18 +224,9 @@ class Postgre(object):
             executed and commited time.
         """
 
-        helpers.validate_types(statements, expected_types=[list, tuple], 
-                               contained_types=[str])
+        helpers.validate_types(statements, expected_types=[list, tuple], contained_types=[str])
 
-        conn = self.connection()
-        cur = conn.cursor()
-        try:
-            cur.execute(";".join(statements))
-            sleep(timesleep)
-        finally:
-            conn.commit()
-            cur.close()
-            conn.close()
+        self.postgre_statement(";".join(statements), timesleep=timesleep)
 
     def dataframe_to_postgre(self, tablename, dataframe_object, method, batch_size, 
                                merge_key=None):

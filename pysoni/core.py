@@ -34,20 +34,6 @@ class Postgre(object):
             self.password = uri_dict.get('password')
             self.connection_options = connection_options
 
-    @staticmethod
-    def format_insert(data_to_insert):
-        """Translates the python object output into an admisible postgresql input."""
-        data_type = type(data_to_insert[0])
-
-        if data_type is list:
-            return [tuple(value) for value in data_to_insert]
-        elif data_type is tuple:
-            return data_to_insert
-        elif data_type in (str, int, float):
-            return [tuple([value]) for value in data_to_insert]
-        else:
-            raise ValueError("Data type is not correct")
-
     def connection(self):
         """This method return a postgre connection object."""
         if self.connection_options:
@@ -96,10 +82,12 @@ class Postgre(object):
 
     def execute_batch_inserts(self, insert_rows, tablename, batch_size=1000):
         """Insert rows in a table using batches, the default batch size it is set to 1000."""
+        helpers.validate_types(subject=insert_rows, expected_types=[list, tuple], contained_types=[str, int, float, list, tuple])
+
         conn = self.connection()
         cur = conn.cursor()
         try:
-            insert = self.format_insert(insert_rows)
+            insert = helpers.format_insert(insert_rows)
             batch_insert, insert = insert[:batch_size], insert[batch_size:]
             while batch_insert:
                 execute_values(cur, f'INSERT INTO {tablename}' + ' VALUES %s', 
@@ -113,13 +101,14 @@ class Postgre(object):
 
     def execute_batch_inserts_specific_columns(self, insert_rows, tablename, columns, batch_size=1000):
         """Insert rows in spectific table columns using batches, the default batch size it is set to 1000."""
+        helpers.validate_types(subject=columns, expected_types=[list, tuple, str])
+        helpers.validate_types(subject=insert_rows, expected_types=[list, tuple], contained_types=[str, int, float, list, tuple])
+
         conn = self.connection()
         cur = conn.cursor()
         try:      
-            helpers.validate_types(subject=columns, expected_types=[list, tuple, str])
-
             insert_colums = helpers.format_sql_string(subject=columns)            
-            insert = self.format_insert(insert_rows)
+            insert = helpers.format_insert(insert_rows)
             batch_insert, insert = insert[:batch_size], insert[batch_size:]
             while batch_insert:
                 execute_values(cur, f'INSERT INTO {tablename} ({insert_colums}) '

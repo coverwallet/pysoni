@@ -38,6 +38,23 @@ def format_sql_string(subject):
     
     return insert_columns
 
+def format_insert(data_to_insert):
+    """Convert the python object into an admissible PostgreSQL input
+
+    Arguments
+    ---------
+    data_to_insert : list, tuple
+        Iterable containing the values that we want to insert in the DB
+    """
+    data_type = type(random.choice(data_to_insert))
+
+    if data_type is list:
+        return [tuple(value) for value in data_to_insert]
+    elif data_type is tuple:
+        return data_to_insert
+    elif data_type in (str, int, float):
+        return [tuple([value]) for value in data_to_insert]
+
 def read_query(name, path=None):
     """Extract a query from a .sql file and return it as a string
 

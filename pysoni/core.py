@@ -35,13 +35,24 @@ class Postgre(object):
             self.connection_options = connection_options
 
     def connection(self):
-        """This method return a postgre connection object."""
+        """Generate the DB connection object
+
+        The values used during the connection are obtained from the fields
+        of the Postgre instance
+        """
+
+        connection_arguments = {
+            'dbname': self.dbname,
+            'user': self.user,
+            'password': self.password,
+            'host': self.host,
+            'port': self.port
+        }
+
         if self.connection_options:
-            return psycopg2.connect(dbname=self.dbname, user=self.user, password=self.password,
-                                host=self.host, port=self.port, options=self.connection_options)
-        else:
-            return psycopg2.connect(dbname=self.dbname, user=self.user, password=self.password,
-                                    host=self.host, port=self.port)
+            connection_arguments['options'] = self.connection_options
+
+        return psycopg2.connect(**connection_arguments)
 
     def delete_batch_rows(self, delete_batch, table_name, column, batch_size=1000, timeout=True):
         """Delete rows from a table using batches when the table column match any value given in the delete_batch

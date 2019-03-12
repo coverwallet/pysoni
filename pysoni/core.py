@@ -48,17 +48,6 @@ class Postgre(object):
         else:
             raise ValueError("Data type is not correct")
 
-    @staticmethod
-    def read_query(name, path=None):
-        """This method it is perform to open an sql query return a python string."""
-        if path:
-            filename = f"{path}{name}.sql"
-        else:
-            filename = f"{name}.sql"
-
-        with open(filename, 'r') as query:
-            return query.read()
-
     def connection(self):
         """This method return a postgre connection object."""
         if self.connection_options:
@@ -159,7 +148,7 @@ class Postgre(object):
         try:
             query_results = {}
             if path_sql_script:
-                cur.execute(self.read_query(queryname, path_sql_script))
+                cur.execute(helpers.read_query(queryname, path_sql_script))
             else:
                 cur.execute(queryname)
             cursor_info = cur.fetchall()

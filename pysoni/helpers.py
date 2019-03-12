@@ -19,3 +19,21 @@ def format_sql_string(subject):
         raise TypeError('The subject type does not match a sql formatable type.')
     
     return insert_columns
+
+def read_query(name, path=None):
+    """Extract a query from a .sql file and return it as a string
+
+    Arguments
+    ---------
+    name : string
+        Name of the file containing the query
+    path : string
+        Path where the file is located. It has to be either absolute or relative to the project root
+    """
+    if path:
+        filename = f"{path}{name}.sql"
+    else:
+        filename = f"{name}.sql"
+
+    with open(filename, 'r') as query:
+        return query.read()

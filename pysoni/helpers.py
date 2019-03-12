@@ -2,6 +2,24 @@ import random
 
 
 def validate_types(subject, expected_types=[], contained_types=[]):
+    """Validates the type of an object or its elements if it's an iterable
+
+    It will raise a TypeError exception if the type of the subject don't match
+    any of the ones specified in expected_types
+
+    It will raise a ValueError exception if the type of an element of the
+    subject (taken at random) doesn't match any of the types specified in
+    contained_types
+
+    Arguments
+    ---------
+    subject : any
+        Element that we want to validate
+    expected_types : iterable of types
+        Types accepted for subject
+    contained_types : iterable of types
+        Types accepted for the elements of subject (if it's an iterable)
+    """
     if expected_types and type(subject) not in expected_types:
         raise TypeError('The type of the subject does not match the expected ones')
 

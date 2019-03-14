@@ -401,10 +401,10 @@ class Postgre(object):
         NEW_RECORD_INDEX = 1
 
         for record in values: 
-            self.postgre_statement(f"""UPDATE {tablename}
-                                       SET {column}='{record[NEW_RECORD_INDEX]}'
-                                       WHERE {column}='{record[OLD_RECORD_INDEX]}'""",
-                                    timesleep=wait_time)
+            update = (f"UPDATE {tablename} "
+                     f"SET {column}='{record[NEW_RECORD_INDEX]}' "
+                     f"WHERE {column}='{record[OLD_RECORD_INDEX]}'")
+            self.postgre_statement(update, timesleep=wait_time)
 
     def update_fields_in_batch(self, tablename, column, values, batch_size):
         """Method to perform postgres batch updates over a column.
@@ -424,7 +424,7 @@ class Postgre(object):
         """
         
         helpers.validate_types(values, expected_types=[list, tuple],
-                               contained_types=[str, int])
+                               contained_types=[list, tuple])
 
         conn = self.connection()
         cur = conn.cursor()

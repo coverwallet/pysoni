@@ -411,22 +411,55 @@ class Postgre(object):
             
     def update_table(self, tablename, merge_key, delete_list, insert_list, insert_batch_size=5000,
                      delete_batch_size=None, columns=None):
-        """This method it is perform to update a table, following the delete and insert pattern to avoid unnecesary
-        index creation. If you don't specify nothing in delete_batch_size arguments the method it is going to delete
-        values of the same size of the insertion"""
-        if delete_batch_size:
-            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batch_size=delete_batch_size,
-                                   timeout=False)
-            if columns:
-                self.execute_batch_inserts_specific_columns(insert_list, tablename=tablename, batch_size=insert_batch_size,
-                                            columns=columns)
-            else:
-                self.execute_batch_inserts(insert_list, tablename=tablename, batch_size=insert_batch_size)
+        """Update the records of a DB table in batches
+
+        It follows the delete-and-insert pattern (first delete all the rows
+        that will be updated, then insert them with the new values) because
+        this greatly improves the speed over doing the update row by row, as
+        this pattern enables batch operations on the DB.
+
+        WARNING: It's important to consider that if only specific columns are
+        updated (by using the 'columns' argument) the rest of the values of the
+        row will be lost (as they won't be re-inserted after the deletion)
+
+        Arguments
+        ---------
+        tablename : string
+            Name of the table that will be updated
+        merge_key : string
+            Name of the column that will be updated
+        delete_list : list, tuple
+            Iterable containing the table PK of the rows that we want to remove
+        insert_list : list, tuple
+            Iterable of iterables, representing all the values that will be
+            inserted in each row
+        insert_batch_size : integer
+            Size of the batch to insert in each DB transaction
+        delete_batch_size : integer
+            Size of the batch to delete in each DB transaction. If not
+            specified, it's set to the same value as insert_batch_size
+        columns : list, tuple
+            Columns to update, in case we don't want to set all the values
+            in the record.
+            WARNING: If you use this option, the values on the missing columns
+            will be lost
+        """
+
+        if not delete_batch_size:
+            delete_batch_size = insert_batch_size
+
+        self.delete_batch_rows(
+            delete_list, table_name=tablename, column=merge_key,
+            batch_size=delete_batch_size, timeout=False
+        )
+
+        if columns:
+            self.execute_batch_inserts_specific_columns(
+                insert_list, tablename=tablename,
+                batch_size=insert_batch_size, columns=columns
+            )
+
         else:
-            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batch_size=insert_batch_size,
-                                   timeout=False)
-            if columns:
-                self.execute_batch_inserts_specific_columns(insert_list, tablename=tablename, batch_size=insert_batch_size,
-                                                            columns=columns)
-            else:
-                self.execute_batch_inserts(insert_list, tablename=tablename, batch_size=insert_batch_size)
+            self.execute_batch_inserts(
+                insert_list, tablename=tablename, batch_size=insert_batch_size
+            )

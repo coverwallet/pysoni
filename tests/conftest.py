@@ -2,6 +2,7 @@ import os
 import pytest
 from dotenv import load_dotenv,find_dotenv
 from pysoni import Postgre
+from pysoni.connection import Connection
 
 load_dotenv(find_dotenv())
 
@@ -9,7 +10,6 @@ load_dotenv(find_dotenv())
 def pysoni_client():
     return Postgre(port='5432', host='localhost', user='cw_test', 
                    dbname='coverwalletdwh', password='')
-
 
 @pytest.fixture
 def pysoni_invalid_client():
@@ -22,7 +22,6 @@ def pysoni_client_connection_options():
                    dbname=os.environ['POSTGRES_DB'], password='', 
                    connection_options='-c statement_timeout=1')
 
-
 @pytest.fixture
 def pysoni_client_invalid_connection_options():
     return Postgre(port='5432', host='localhost', user='cwtest',
@@ -34,3 +33,16 @@ def pysoni_client_connection_with_envvars():
     return Postgre(port='5432', host='localhost', user=os.environ['POSTGRES_USER'],
                    dbname=os.environ['POSTGRES_DB'], password='',
                    connection_options='-c statement_timeout=30000')
+
+@pytest.fixture
+def connection(mocker):
+    return Connection(port='5432', host='localhost', user='cw_test',
+                      dbname='coverwalletdwh', password='', uri=None,
+                      connection_options=None)
+
+@pytest.fixture
+def open_connection(connection, mocker):
+    connection.is_open = True
+    connection._connection_handler = mocker.Mock()
+
+    return connection

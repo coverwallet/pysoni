@@ -34,39 +34,25 @@ class Postgre(object):
             self.password = uri_dict.get('password')
             self.connection_options = connection_options
 
-    @staticmethod
-    def format_insert(data_to_insert):
-        """Translates the python object output into an admisible postgresql input."""
-        data_type = type(data_to_insert[0])
-
-        if data_type is list:
-            return [tuple(value) for value in data_to_insert]
-        elif data_type is tuple:
-            return data_to_insert
-        elif data_type in (str, int, float):
-            return [tuple([value]) for value in data_to_insert]
-        else:
-            raise ValueError("Data type is not correct")
-
-    @staticmethod
-    def read_query(name, path=None):
-        """This method it is perform to open an sql query return a python string."""
-        if path:
-            filename = f"{path}{name}.sql"
-        else:
-            filename = f"{name}.sql"
-
-        with open(filename, 'r') as query:
-            return query.read()
-
     def connection(self):
-        """This method return a postgre connection object."""
+        """Generate the DB connection object
+
+        The values used during the connection are obtained from the fields
+        of the Postgre instance
+        """
+
+        connection_arguments = {
+            'dbname': self.dbname,
+            'user': self.user,
+            'password': self.password,
+            'host': self.host,
+            'port': self.port
+        }
+
         if self.connection_options:
-            return psycopg2.connect(dbname=self.dbname, user=self.user, password=self.password,
-                                host=self.host, port=self.port, options=self.connection_options)
-        else:
-            return psycopg2.connect(dbname=self.dbname, user=self.user, password=self.password,
-                                    host=self.host, port=self.port)
+            connection_arguments['options'] = self.connection_options
+
+        return psycopg2.connect(**connection_arguments)
 
     def delete_batch_rows(self, delete_batch, table_name, column, batch_size=1000, timeout=True):
         """Delete rows from a table using batches when the table column match any value given in the delete_batch
@@ -107,10 +93,12 @@ class Postgre(object):
 
     def execute_batch_inserts(self, insert_rows, tablename, batch_size=1000):
         """Insert rows in a table using batches, the default batch size it is set to 1000."""
+        helpers.validate_types(subject=insert_rows, expected_types=[list, tuple], contained_types=[str, int, float, list, tuple])
+
         conn = self.connection()
         cur = conn.cursor()
         try:
-            insert = self.format_insert(insert_rows)
+            insert = helpers.format_insert(insert_rows)
             batch_insert, insert = insert[:batch_size], insert[batch_size:]
             while batch_insert:
                 execute_values(cur, f'INSERT INTO {tablename}' + ' VALUES %s', 
@@ -124,13 +112,14 @@ class Postgre(object):
 
     def execute_batch_inserts_specific_columns(self, insert_rows, tablename, columns, batch_size=1000):
         """Insert rows in spectific table columns using batches, the default batch size it is set to 1000."""
+        helpers.validate_types(subject=columns, expected_types=[list, tuple, str])
+        helpers.validate_types(subject=insert_rows, expected_types=[list, tuple], contained_types=[str, int, float, list, tuple])
+
         conn = self.connection()
         cur = conn.cursor()
         try:      
-            helpers.validate_types(subject=columns, expected_types=[list, tuple, str])
-
             insert_colums = helpers.format_sql_string(subject=columns)            
-            insert = self.format_insert(insert_rows)
+            insert = helpers.format_insert(insert_rows)
             batch_insert, insert = insert[:batch_size], insert[batch_size:]
             while batch_insert:
                 execute_values(cur, f'INSERT INTO {tablename} ({insert_colums}) '
@@ -159,7 +148,7 @@ class Postgre(object):
         try:
             query_results = {}
             if path_sql_script:
-                cur.execute(self.read_query(queryname, path_sql_script))
+                cur.execute(helpers.read_query(queryname, path_sql_script))
             else:
                 cur.execute(queryname)
             cursor_info = cur.fetchall()
@@ -246,18 +235,9 @@ class Postgre(object):
             executed and commited time.
         """
 
-        helpers.validate_types(statements, expected_types=[list, tuple], 
-                               contained_types=[str])
+        helpers.validate_types(statements, expected_types=[list, tuple], contained_types=[str])
 
-        conn = self.connection()
-        cur = conn.cursor()
-        try:
-            cur.execute(";".join(statements))
-            sleep(timesleep)
-        finally:
-            conn.commit()
-            cur.close()
-            conn.close()
+        self.postgre_statement(";".join(statements), timesleep=timesleep)
 
     def dataframe_to_postgre(self, tablename, dataframe_object, method, batch_size, 
                                merge_key=None):
@@ -444,22 +424,55 @@ class Postgre(object):
             
     def update_table(self, tablename, merge_key, delete_list, insert_list, insert_batch_size=5000,
                      delete_batch_size=None, columns=None):
-        """This method it is perform to update a table, following the delete and insert pattern to avoid unnecesary
-        index creation. If you don't specify nothing in delete_batch_size arguments the method it is going to delete
-        values of the same size of the insertion"""
-        if delete_batch_size:
-            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batch_size=delete_batch_size,
-                                   timeout=False)
-            if columns:
-                self.execute_batch_inserts_specific_columns(insert_list, tablename=tablename, batch_size=insert_batch_size,
-                                            columns=columns)
-            else:
-                self.execute_batch_inserts(insert_list, tablename=tablename, batch_size=insert_batch_size)
+        """Update the records of a DB table in batches
+
+        It follows the delete-and-insert pattern (first delete all the rows
+        that will be updated, then insert them with the new values) because
+        this greatly improves the speed over doing the update row by row, as
+        this pattern enables batch operations on the DB.
+
+        WARNING: It's important to consider that if only specific columns are
+        updated (by using the 'columns' argument) the rest of the values of the
+        row will be lost (as they won't be re-inserted after the deletion)
+
+        Arguments
+        ---------
+        tablename : string
+            Name of the table that will be updated
+        merge_key : string
+            Name of the column that will be updated
+        delete_list : list, tuple
+            Iterable containing the table PK of the rows that we want to remove
+        insert_list : list, tuple
+            Iterable of iterables, representing all the values that will be
+            inserted in each row
+        insert_batch_size : integer
+            Size of the batch to insert in each DB transaction
+        delete_batch_size : integer
+            Size of the batch to delete in each DB transaction. If not
+            specified, it's set to the same value as insert_batch_size
+        columns : list, tuple
+            Columns to update, in case we don't want to set all the values
+            in the record.
+            WARNING: If you use this option, the values on the missing columns
+            will be lost
+        """
+
+        if not delete_batch_size:
+            delete_batch_size = insert_batch_size
+
+        self.delete_batch_rows(
+            delete_list, table_name=tablename, column=merge_key,
+            batch_size=delete_batch_size, timeout=False
+        )
+
+        if columns:
+            self.execute_batch_inserts_specific_columns(
+                insert_list, tablename=tablename,
+                batch_size=insert_batch_size, columns=columns
+            )
+
         else:
-            self.delete_batch_rows(delete_list, table_name=tablename, column=merge_key, batch_size=insert_batch_size,
-                                   timeout=False)
-            if columns:
-                self.execute_batch_inserts_specific_columns(insert_list, tablename=tablename, batch_size=insert_batch_size,
-                                                            columns=columns)
-            else:
-                self.execute_batch_inserts(insert_list, tablename=tablename, batch_size=insert_batch_size)
+            self.execute_batch_inserts(
+                insert_list, tablename=tablename, batch_size=insert_batch_size
+            )

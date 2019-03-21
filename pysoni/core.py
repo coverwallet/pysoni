@@ -357,56 +357,69 @@ class Postgre(object):
         results = self.execute_query(query, path_sql_script=path_sql_script)
         return results['results']
 
-    def update_fields(self, tablename, field, values, timeout=True, multiproccesing=False):
-        """This method it is perform to create massive updates over a table, you could use the multiprocessing flag to
-        open parallel connections."""
-        if multiproccesing is False:
-            if type(values) != (list, tuple) and len(values[0]) != 2:
-                raise TypeError("Values argument need to be a list or tuple of lists or tuples first element"
-                                "old value second element new value")
-            else:
-                pass
-            for record in values:
-                self.postgre_statement(f"UPDATE {tablename} SET {field} = '{record[1]}' WHERE {field}='{record[0]}'",
-                                       timesleep=timeout)
-            return "fields updated correctly"
-        else:
-            if type(values) != (list, tuple) and len(values) != 2:
-                raise TypeError("Values argument need to be a list or tuple of lists or tuples first element"
-                                "old value second element new value")
-            else:
-                self.postgre_statement(f"UPDATE {tablename} SET {field} = '{values[1]}' WHERE {field}='{values[0]}'",
-                                       timesleep=timeout)
-            return "fields updated correctly"
+    def update_fields(self, tablename, column, values, wait_time=0):
+        """Method to perform updates over a column.
+        Arguments
+        ----------
+        tablename : string
+            String representing the table we want to update.
+        column : int
+            String representing the column we want to update the values.
+        values : list, tuple
+            Iterable of iterables representing the values we want to update.
+            By default the first element of the value is corresponding with,
+            the old value and the second element of the value corresponds with,
+            the new value we are going to update.
+        wait_time : int
+            Sleep time between update transactions.
+        """
 
-    def update_fields_execute_values(self, tablename, field, values_tuple, batch_size):
-        """This method it is perform to create massive updates using execute_values method"""
-        if len(values_tuple[0]) == 2 and type(values_tuple[0]) in (tuple, list) and type(values_tuple[0][1]) is str:
-            pass
-        else:
-            raise TypeError("Value error value tuple argument need to be a list of tuples of longitude 2 where "
-                            "each element of the tuple need to be a string.")
+        helpers.validate_types(values, expected_types=[list, tuple], 
+                               contained_types=[list,tuple])
+
+        OLD_RECORD_INDEX = 0
+        NEW_RECORD_INDEX = 1
+
+        for record in values: 
+            update = (f"UPDATE {tablename} "
+                     f"SET {column}='{record[NEW_RECORD_INDEX]}' "
+                     f"WHERE {column}='{record[OLD_RECORD_INDEX]}'")
+            self.postgre_statement(update, timesleep=wait_time)
+
+    def update_fields_in_batch(self, tablename, column, values, batch_size):
+        """Method to perform postgres batch updates over a column.
+        Arguments
+        ----------
+        tablename : string
+            String representing the table we want to update.
+        column : int
+            String representing the column we want to update the values.
+        values : list, tuple
+            Iterable of iterables representing the values we want to update.
+            By default the first element of the value is corresponding with,
+            the old value and the second element of the value corresponds with,
+            the new value we are going to update.
+        wait_time : int
+            Sleep time between update transactions.
+        """
+        
+        helpers.validate_types(values, expected_types=[list, tuple],
+                               contained_types=[list, tuple])
+
         conn = self.connection()
-        # we create a cursor
         cur = conn.cursor()
         try:
-            batch_update, update = values_tuple[:batch_size], values_tuple[batch_size:]
+            batch_update, update = values[:batch_size], values[batch_size:]
             while len(batch_update) > 0:
-                try:
-                    execute_values(cur, "UPDATE " + tablename + " SET " + field + " = data.new_value FROM (VALUES %s) "
-                                                                                  "AS data (old_value, new_value) " \
-                                                                                  "WHERE " + field + " = data.old_value",
-                                   batch_update
-                                   )
+                    execute_values(cur, f"UPDATE {tablename} SET {column}" 
+                                        +"= data.new_value FROM (VALUES %s) "
+                                        "AS data (old_value, new_value) " \
+                                        f"WHERE {column} = data.old_value",
+                                   batch_update)
                     batch_update, update = update[:batch_size], update[batch_size:]
-                    conn.commit()
-                except Exception as e:
-                    print(e)
-                    break
-            print("fields updated correctly")
-        except:
-            cur.close()
         finally:
+            conn.commit()
+            cur.close()
             conn.close()
             
     def update_table(self, tablename, merge_key, delete_list, insert_list, insert_batch_size=5000,

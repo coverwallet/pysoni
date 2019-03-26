@@ -23,31 +23,36 @@ class Connection:
 
         self.connection_options = connection_options
         self._connection_handler = None
-        self.is_open = False
 
     def connect(self):
-        if self.is_open:
-            return True
-        
-        self._connection_handler = psycopg2.connect(**self._build_connection_arguments())
-        self.is_open = True
+        """Start the connection to the DB
 
-        return self.is_open
+        Calling to this method will start the connection to the DB, using the
+        arguments specified on the object's initialization.
+
+        The underlying connection is managed via the psycopg2 library. If the
+        connection is stablished correctly, the psycopg2 connection will be
+        assigned to the field `_connection_handler` of the Connection instance.
+        Please note that this field is intended to be for internal use only, 
+        and that you shouldn't access it directly from your app.
+        """
+        self._connection_handler = psycopg2.connect(**self._build_connection_arguments())
 
     def close(self):
-        if not self.is_open:
-            return True
-        
+        """Close the DB connection
+
+        Delegates the `close()` method to the psycopg2 connection handler and
+        then sets the `_connection_handler` field to None
+        """
         self._connection_handler.close()
         self._connection_handler = None
-        self.is_open = False
-
-        return True
         
     def cursor(self):
+        """Obtain a psycopg2 DB cursor"""
         return self._connection_handler.cursor()
 
     def commit(self):
+        """Commit all the changes pending on this connection to the DB"""
         return self._connection_handler.commit()
 
     def _build_connection_arguments(self):

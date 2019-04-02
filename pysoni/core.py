@@ -1,13 +1,12 @@
 from time import sleep
 from random import randrange
 
-import psycopg2
 from psycopg2.extras import execute_values
-from psycopg2.extensions import parse_dsn
 from pandas import DataFrame, to_datetime, notnull
 from toolz import groupby
 
 from . import helpers
+from .connection import Connection
 
 
 class Postgre(object):
@@ -17,42 +16,21 @@ class Postgre(object):
 
     def __init__(self, port=None, host=None, dbname=None, user=None, password=None, uri=None,
                  connection_options='-c statement_timeout=3600000'):
-        if not uri:
-            self.port = port
-            self.host = host
-            self.dbname = dbname
-            self.user = user
-            self.password = password
-            self.connection_options = connection_options
-        else:
-            uri_dict = parse_dsn(uri)
-            
-            self.port = uri_dict.get('port')
-            self.host = uri_dict.get('host')
-            self.dbname = uri_dict.get('dbname')
-            self.user = uri_dict.get('user')
-            self.password = uri_dict.get('password')
-            self.connection_options = connection_options
+
+        self.db_connection = Connection(port=port, host=host, dbname=dbname,
+                                        user=user, password=password, uri=uri,
+                                        connection_options=connection_options)
 
     def connection(self):
-        """Generate the DB connection object
+        """Generate the DB connection object and connects to it
 
         The values used during the connection are obtained from the fields
         of the Postgre instance
         """
 
-        connection_arguments = {
-            'dbname': self.dbname,
-            'user': self.user,
-            'password': self.password,
-            'host': self.host,
-            'port': self.port
-        }
+        self.db_connection.connect()
 
-        if self.connection_options:
-            connection_arguments['options'] = self.connection_options
-
-        return psycopg2.connect(**connection_arguments)
+        return self.db_connection
 
     def delete_batch_rows(self, delete_batch, table_name, column, batch_size=1000, timeout=True):
         """Delete rows from a table using batches when the table column match any value given in the delete_batch

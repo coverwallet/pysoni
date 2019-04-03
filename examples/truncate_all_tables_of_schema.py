@@ -14,8 +14,3 @@ table_names_tuple = client.postgre_to_tuple(
 table_names = ','.join(f"{schema_name}.{name[0]}" for name in table_names_tuple)
 
 client.postgre_statement(f"TRUNCATE TABLE {table_names}")
-
-
-
-
-

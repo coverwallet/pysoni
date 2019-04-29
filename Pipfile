@@ -4,17 +4,16 @@ verify_ssl = true
 name = "pypi"
 
 [dev-packages]
-pytest = "*"
-coverage = "*"
-ipython = "*"
-python-dotenv = "*"
-pytest-mock = "*"
-pandas = "*"
+pytest = "==4.4.1"
+coverage = "==4.5.3"
+ipython =  "==7.5.0"
+python-dotenv = "==0.10.1"
+pytest-mock = "==1.10.4"
 
 [packages]
-pandas = ">=0.22.0"
-toolz = ">=0.9.0"
-"psycopg2" = ">=2.7.5"
+pandas = "==0.24.2"
+toolz = "==0.9.0"
+"psycopg2" = "==2.7.5"
 
 [requires]
 python_version = "3.6"

@@ -10,8 +10,7 @@ setup(name='pysoni',
       license='MIT',
       packages=['pysoni'],
       install_requires=[
-          'psycopg2',
+          'psycopg2-binary',
           'pandas',
           'toolz',
-          'psycopg2-binary'
       ])

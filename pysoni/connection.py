@@ -51,6 +51,7 @@ class Connection:
             self.password = password
 
         self.connection_options = connection_options
+        self._is_opened = False
         self._connection_handler = None
 
     def connect(self):
@@ -66,7 +67,11 @@ class Connection:
         and that you shouldn't access it directly from your app.
         """
 
+        if self._is_opened:
+            return
+
         self._connection_handler = psycopg2.connect(**self._build_connection_arguments())
+        self._is_opened = True
 
     def close(self):
         """Close the DB connection
@@ -75,8 +80,12 @@ class Connection:
         then sets the `_connection_handler` field to None
         """
 
+        if not self._is_opened:
+            return
+
         self._connection_handler.close()
         self._connection_handler = None
+        self._is_opened = False
         
     def cursor(self):
         """Obtain a psycopg2 DB cursor

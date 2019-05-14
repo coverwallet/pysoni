@@ -11,7 +11,7 @@ class Connection:
     """
 
     def __init__(self, port=None, host=None, dbname=None, user=None, password=None, uri=None,
-                 connection_options=None):
+                 connection_options=None, is_persistent=False):
         """
         Parameters
         -----------
@@ -51,6 +51,7 @@ class Connection:
             self.password = password
 
         self.connection_options = connection_options
+        self.is_persistent = is_persistent
         self._is_opened = False
         self._connection_handler = None
 
@@ -80,7 +81,7 @@ class Connection:
         then sets the `_connection_handler` field to None
         """
 
-        if not self._is_opened:
+        if self.is_persistent or not self._is_opened:
             return
 
         self._connection_handler.close()

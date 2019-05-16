@@ -10,9 +10,11 @@ from .connection import Connection
 
 
 class Postgre(object):
-    """This class will contain special methods to perform over PostgreSQL.To create a class instance we need
-    the following arguments in this order database port, database host, database dbname, database user,
-    database password"""
+    """This class will contain special methods to perform over PostgreSQL.
+
+    The arguments received on initialization are passed directly to Connection,
+    you can find more information about them in its documentation
+    """
 
     def __init__(self, port=None, host=None, dbname=None, user=None, password=None, uri=None,
                  is_persistent=False, connection_options='-c statement_timeout=3600000'):

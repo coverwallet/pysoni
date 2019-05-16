@@ -32,6 +32,11 @@ class Connection:
             connecion_options : str
                 Additional options we may want to specify when connecting to
                 the DB. Its value will be sent directly to psycopg2.connect
+            is_persistent : boolean
+                Set it to True if you want to reuse the same connection
+                along different statement. By doing so, it won't be closed when
+                .close is called, you'll need to explicitly call .terminate
+                instead.
         """
 
         if uri:

@@ -52,7 +52,6 @@ class Connection:
 
         self.connection_options = connection_options
         self.is_persistent = is_persistent
-        self._is_opened = False
         self._connection_handler = None
 
     def connect(self):
@@ -72,7 +71,6 @@ class Connection:
             return
 
         self._connection_handler = psycopg2.connect(**self._build_connection_arguments())
-        self._is_opened = True
 
     def close(self):
         """Close the DB connection
@@ -113,6 +111,10 @@ class Connection:
 
         return self._connection_handler.commit()
 
+    @property
+    def _is_opened(self):
+        return self._connection_handler and self._connection_handler.closed == 0
+
     def _build_connection_arguments(self):
         connection_arguments = {
             'dbname': self.dbname,
@@ -128,4 +130,3 @@ class Connection:
     def _handle_closing(self):
         self._connection_handler.close()
         self._connection_handler = None
-        self._is_opened = False

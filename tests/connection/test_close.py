@@ -18,8 +18,8 @@ def test_close_sets_is_opened_to_false(open_connection):
     assert not open_connection._is_opened
 
 def test_close_if_the_connection_is_not_opened_does_not_close(connection, mocker):
-    connection._is_opened = False
     connection._connection_handler = mocker.Mock()
+    connection._connection_handler.closed = 1
 
     connection.close()
 

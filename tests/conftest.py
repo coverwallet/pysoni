@@ -43,6 +43,6 @@ def connection():
 @pytest.fixture
 def open_connection(connection, mocker):
     connection._connection_handler = mocker.Mock()
-    connection._is_opened = True
+    connection._connection_handler.closed = 0
 
     return connection

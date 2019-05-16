@@ -84,9 +84,7 @@ class Connection:
         if self.is_persistent or not self._is_opened:
             return
 
-        self._connection_handler.close()
-        self._connection_handler = None
-        self._is_opened = False
+        self._handle_closing()
 
     def terminate(self):
         """Force-closes the DB connection
@@ -99,9 +97,7 @@ class Connection:
         if not self._is_opened:
             return
 
-        self._connection_handler.close()
-        self._connection_handler = None
-        self._is_opened = False
+        self._handle_closing()
 
     def cursor(self):
         """Obtain a psycopg2 DB cursor
@@ -128,3 +124,8 @@ class Connection:
         }
 
         return connection_arguments
+
+    def _handle_closing(self):
+        self._connection_handler.close()
+        self._connection_handler = None
+        self._is_opened = False

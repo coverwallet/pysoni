@@ -15,10 +15,11 @@ class Postgre(object):
     database password"""
 
     def __init__(self, port=None, host=None, dbname=None, user=None, password=None, uri=None,
-                 connection_options='-c statement_timeout=3600000'):
+                 is_persistent=False, connection_options='-c statement_timeout=3600000'):
 
         self.db_connection = Connection(port=port, host=host, dbname=dbname,
                                         user=user, password=password, uri=uri,
+                                        is_persistent=is_persistent,
                                         connection_options=connection_options)
 
     def connection(self):

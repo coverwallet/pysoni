@@ -87,7 +87,22 @@ class Connection:
         self._connection_handler.close()
         self._connection_handler = None
         self._is_opened = False
-        
+
+    def terminate(self):
+        """Force-closes the DB connection
+
+        Ensures that we close the connection with the database. The main
+        difference with `close()` is that this method closes the connection
+        even if it is set as persistent
+        """
+
+        if not self._is_opened:
+            return
+
+        self._connection_handler.close()
+        self._connection_handler = None
+        self._is_opened = False
+
     def cursor(self):
         """Obtain a psycopg2 DB cursor
 

@@ -11,3 +11,8 @@ def test_connect_opens_the_connection_correctly(connection, mocker):
     connection.connect()
 
     psycopg2.connect.assert_called_once_with(**expected_connection_args)
+
+def test_connect_if_connection_is_already_open_does_not_connect(open_connection):
+    open_connection.connect()
+
+    open_connection._connection_handler.connect.assert_not_called()

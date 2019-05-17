@@ -35,7 +35,7 @@ def pysoni_client_connection_with_envvars():
                    connection_options='-c statement_timeout=30000')
 
 @pytest.fixture
-def connection(mocker):
+def connection():
     return Connection(port='5432', host='localhost', user='cw_test',
                       dbname='coverwalletdwh', password='', uri=None,
                       connection_options=None)
@@ -43,5 +43,6 @@ def connection(mocker):
 @pytest.fixture
 def open_connection(connection, mocker):
     connection._connection_handler = mocker.Mock()
+    connection._connection_handler.closed = 0
 
     return connection

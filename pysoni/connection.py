@@ -11,7 +11,7 @@ class Connection:
     """
 
     def __init__(self, port=None, host=None, dbname=None, user=None, password=None, uri=None,
-                 connection_options=None):
+                 connection_options=None, is_persistent=False):
         """
         Parameters
         -----------
@@ -32,6 +32,11 @@ class Connection:
             connecion_options : str
                 Additional options we may want to specify when connecting to
                 the DB. Its value will be sent directly to psycopg2.connect
+            is_persistent : boolean
+                Set it to True if you want to reuse the same connection
+                along different statement. By doing so, it won't be closed when
+                .close is called, you'll need to explicitly call .terminate
+                instead.
         """
 
         if uri:
@@ -51,6 +56,7 @@ class Connection:
             self.password = password
 
         self.connection_options = connection_options
+        self.is_persistent = is_persistent
         self._connection_handler = None
 
     def connect(self):
@@ -66,6 +72,9 @@ class Connection:
         and that you shouldn't access it directly from your app.
         """
 
+        if self._is_opened:
+            return
+
         self._connection_handler = psycopg2.connect(**self._build_connection_arguments())
 
     def close(self):
@@ -75,9 +84,24 @@ class Connection:
         then sets the `_connection_handler` field to None
         """
 
-        self._connection_handler.close()
-        self._connection_handler = None
-        
+        if self.is_persistent or not self._is_opened:
+            return
+
+        self._handle_closing()
+
+    def terminate(self):
+        """Force-closes the DB connection
+
+        Ensures that we close the connection with the database. The main
+        difference with `close()` is that this method closes the connection
+        even if it is set as persistent
+        """
+
+        if not self._is_opened:
+            return
+
+        self._handle_closing()
+
     def cursor(self):
         """Obtain a psycopg2 DB cursor
 
@@ -92,6 +116,10 @@ class Connection:
 
         return self._connection_handler.commit()
 
+    @property
+    def _is_opened(self):
+        return self._connection_handler and self._connection_handler.closed == 0
+
     def _build_connection_arguments(self):
         connection_arguments = {
             'dbname': self.dbname,
@@ -103,3 +131,7 @@ class Connection:
         }
 
         return connection_arguments
+
+    def _handle_closing(self):
+        self._connection_handler.close()
+        self._connection_handler = None

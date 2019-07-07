@@ -83,10 +83,6 @@ class Connection:
         Delegates the `close()` method to the psycopg2 connection handler and
         then sets the `_connection_handler` field to None
         """
-
-        if self.is_persistent or not self._is_opened:
-            return
-
         self._handle_closing()
 
     def terminate(self):
@@ -96,11 +92,7 @@ class Connection:
         difference with `close()` is that this method closes the connection
         even if it is set as persistent
         """
-
-        if not self._is_opened:
-            return
-
-        self._handle_closing()
+        self._handle_closing(force=True)
 
     def cursor(self):
         """Obtain a psycopg2 DB cursor
@@ -132,6 +124,12 @@ class Connection:
 
         return connection_arguments
 
-    def _handle_closing(self):
+    def _handle_closing(self, force=False):
+        if not self._is_opened: return
+
+        self.cursor().close()
+
+        if self.is_persistent and not force: return
+
         self._connection_handler.close()
         self._connection_handler = None

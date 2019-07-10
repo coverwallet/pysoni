@@ -1,5 +1,4 @@
-from time import sleep
-from random import randrange
+from time import sleep, time
 
 from psycopg2.extras import execute_values
 from pandas import DataFrame, to_datetime, notnull
@@ -47,7 +46,6 @@ class Postgre(object):
             self.postgre_statement(f"delete from {table_name} where {column} in ({rows_string})", timesleep=timeout)
             delete_batch, remaining_rows = remaining_rows[:batch_size], remaining_rows[batch_size:]
 
-
     def drop_tables(self, table_names, wait_time=0, batch=True):
         """Delete a set of DB tables.
 
@@ -71,10 +69,31 @@ class Postgre(object):
             for table_name in table_names:
                 self.postgre_statement(f"DROP TABLE {table_name}", timesleep=wait_time)
 
+    def execute_batch_inserts(self, insert_rows, tablename, batch_size=1000, columns=None):
+        """Insert rows in a table using batches.
 
-    def execute_batch_inserts(self, insert_rows, tablename, batch_size=1000):
-        """Insert rows in a table using batches, the default batch size it is set to 1000."""
-        helpers.validate_types(subject=insert_rows, expected_types=[list, tuple], contained_types=[str, int, float, list, tuple])
+        Arguments
+        ---------
+        insert_rows: list, tuple
+            Iterable containing the values that we want to insert in the DB
+        tablename: str
+            Name of the table where the values will be inserted
+        batch_size: int
+            Size of each batch of values. The default batch size it is set to 1000.
+        columns: list, tuple
+            List containing the bame of the columns to be used in the insertion.
+            They must be in the same order than the values. If it is not specified,
+            it is assumed that the order of the values follow the order of the
+            columns of the table.
+        """
+        if columns:
+            helpers.validate_types(subject=columns, expected_types=[list, tuple, str])
+            insert_columns = f" ({(helpers.format_sql_string(subject=columns))})"
+        else:
+            insert_columns = ""
+
+        helpers.validate_types(subject=insert_rows, expected_types=[list, tuple],
+                               contained_types=[str, int, float, list, tuple])
 
         conn = self.connection()
         cur = conn.cursor()
@@ -82,29 +101,7 @@ class Postgre(object):
             insert = helpers.format_insert(insert_rows)
             batch_insert, insert = insert[:batch_size], insert[batch_size:]
             while batch_insert:
-                execute_values(cur, f'INSERT INTO {tablename}' + ' VALUES %s', 
-                               batch_insert)
-                batch_insert, insert = insert[:batch_size], insert[batch_size:]
-                conn.commit()
-        finally:
-            conn.commit()
-            cur.close()
-            conn.close()
-
-    def execute_batch_inserts_specific_columns(self, insert_rows, tablename, columns, batch_size=1000):
-        """Insert rows in spectific table columns using batches, the default batch size it is set to 1000."""
-        helpers.validate_types(subject=columns, expected_types=[list, tuple, str])
-        helpers.validate_types(subject=insert_rows, expected_types=[list, tuple], contained_types=[str, int, float, list, tuple])
-
-        conn = self.connection()
-        cur = conn.cursor()
-        try:      
-            insert_colums = helpers.format_sql_string(subject=columns)            
-            insert = helpers.format_insert(insert_rows)
-            batch_insert, insert = insert[:batch_size], insert[batch_size:]
-            while batch_insert:
-                execute_values(cur, f'INSERT INTO {tablename} ({insert_colums}) '
-                                    +' VALUES %s', batch_insert)
+                execute_values(cur, f'INSERT INTO {tablename}{insert_columns} VALUES %s', batch_insert)
                 batch_insert, insert = insert[:batch_size], insert[batch_size:]
                 conn.commit()
         finally:
@@ -149,7 +146,6 @@ class Postgre(object):
         finally:
             cur.close()
             conn.close()
-            
 
     def get_schema(self, schema, metadata=False):
         """This method it is perform to get all the schema information from postgresql."""
@@ -248,7 +244,7 @@ class Postgre(object):
                 columns=df_columns)
 
         elif method == 'append':
-            self.execute_batch_inserts_specific_columns(
+            self.execute_batch_inserts(
                 tablename=tablename, columns=df_columns, insert_rows=df_values,
                 batch_size=batch_size)
 
@@ -447,13 +443,69 @@ class Postgre(object):
             batch_size=delete_batch_size, timeout=False
         )
 
-        if columns:
-            self.execute_batch_inserts_specific_columns(
-                insert_list, tablename=tablename,
-                batch_size=insert_batch_size, columns=columns
-            )
+        self.execute_batch_inserts(
+            insert_list, tablename=tablename, batch_size=insert_batch_size, columns=columns
+        )
 
-        else:
-            self.execute_batch_inserts(
-                insert_list, tablename=tablename, batch_size=insert_batch_size
-            )
+    def update_table_with_temp_table(self, schema, tablename, insert_list, merge_key=None,
+                                     insert_batch_size=5000, columns=None, truncate_table=False):
+        """Use a temporary staging table to perform a merge (Upsert). It update
+        and insert efficiently new data by loading your data into a staging table
+        first. Then, in one single transaction, deletes all the rows in the target
+        table using a merge key and inserts all the rows from the temporary table.
+
+        The connection must be persistent (is_persistent=True) to use temporary
+        tables.
+
+        WARNING: It's important to consider that if only specific columns are
+        updated (by using the 'columns' argument) the rest of the values of the
+        row will be lost (as they won't be re-inserted after the deletion)
+
+        Arguments
+        ---------
+        schema: string
+            Name of the schema that contains the that will be updated
+        tablename: string
+            Name of the table that will be updated
+        merge_key: string (optional)
+            Column used to make an inner join to delete rows that will be updated.
+            If it is not specified, only an insert operation from the temporary
+            table is done
+        insert_list: list, tuple
+            Iterable of iterables, representing all the values that will be
+            inserted in each row
+        insert_batch_size: integer
+            Size of the batch to insert in each DB transaction
+        columns : list, tuple
+            Columns to update, in case we don't want to set all the values
+            in the record.
+            WARNING: If you use this option, the values on the missing columns
+            will be lost
+        truncate_table : boolean
+            If true, truncates the table before doing the insertion. False by default
+        """
+        if not self.db_connection.is_persistent:
+            raise ConnectionError("The connection must be persistent to use temporary tables")
+
+        execution_time = str(time()).replace('.', '')
+        tmp_table = f'{tablename}_TEMP_{execution_time}'
+        table_name_with_schema = f"{schema}.{tablename}"
+
+        self.postgre_statement(f"CREATE TEMP TABLE {tmp_table} AS (SELECT * FROM {table_name_with_schema} LIMIT 0)")
+
+        # Batch insert is done in temporary table
+        self.execute_batch_inserts(insert_list, tablename=tmp_table, batch_size=insert_batch_size, columns=columns)
+
+        sql_statements = []
+        if truncate_table:
+            sql_statements.append(f"TRUNCATE TABLE {table_name_with_schema}")
+
+        if merge_key:
+            sql_statements.append(
+                f"DELETE FROM {table_name_with_schema} USING {tmp_table} "
+                f"WHERE {table_name_with_schema}.{merge_key}={tmp_table}.{merge_key};")
+
+        # Table truncation, batch delete and insert happens in one single transaction
+        sql_statements.append(f"INSERT INTO {table_name_with_schema} (SELECT * FROM {tmp_table})")
+        self.postgre_multiple_statements(sql_statements)
+

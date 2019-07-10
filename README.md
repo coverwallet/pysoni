@@ -25,7 +25,7 @@ insert_batch_size=YOURBATCHINSERTSIZE, delete_batch_size=YOURBATCHDELETESIZE)
 
 Pysoni library requires python 3.6 or later versions and is supported for PostgreSQL, versions from 9.2.
 
-Pisony is available on PyPI. Use pip to install:
+Pysoni is available on PyPI. Use pip to install:
 
 ```
 $ pip install pysoni
@@ -43,3 +43,7 @@ $ pipenv install -e git+ssh://git@github.com/coverwallet/pysoni.git@<tag_name>#e
 ```
 
 If it is preferred to use http instead of ssh, just change the 'git+ssh' by 'git+http'.
+
+# How to run tests
+
+`docker-compose run --rm tests`

@@ -81,7 +81,11 @@ class Connection:
         """Close the DB connection
 
         Delegates the `close()` method to the psycopg2 connection handler and
-        then sets the `_connection_handler` field to None
+        then sets the `_connection_handler` field to None.
+
+        In persistent connections, it will only close the cursor; the connection
+        will be kept open. In order to close persistent connections, use the
+        "terminate" method.
         """
         self._handle_closing()
 

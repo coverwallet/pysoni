@@ -448,7 +448,7 @@ class Postgre(object):
             insert_list, tablename=tablename, batch_size=insert_batch_size, columns=columns
         )
 
-    def update_table_with_temp_table(self, schema, tablename, insert_list, merge_key=None,
+    def update_table_with_temp_table(self, tablename, insert_list, schema=None, merge_key=None,
                                      insert_batch_size=5000, columns=None, truncate_table=False):
         """Use a temporary staging table to perform a merge (Upsert). It update
         and insert efficiently new data by loading your data into a staging table
@@ -464,8 +464,6 @@ class Postgre(object):
 
         Arguments
         ---------
-        schema: string
-            Name of the schema that contains the that will be updated
         tablename: string
             Name of the table that will be updated
         merge_key: string (optional)
@@ -475,6 +473,8 @@ class Postgre(object):
         insert_list: list, tuple
             Iterable of iterables, representing all the values that will be
             inserted in each row
+        schema: string
+            Name of the schema that contains the table that will be updated (Optional).
         insert_batch_size: integer
             Size of the batch to insert in each DB transaction
         columns : list, tuple
@@ -490,7 +490,7 @@ class Postgre(object):
 
         execution_time = datetime.now().strftime("%Y%m%d%H%M%S%f")
         tmp_table = f'{tablename}_TEMP_{execution_time}'
-        table_name_with_schema = f"{schema}.{tablename}"
+        table_name_with_schema = f"{schema}.{tablename}" if schema else tablename
 
         self.postgre_statement(f"CREATE TEMP TABLE {tmp_table} AS (SELECT * FROM {table_name_with_schema} LIMIT 0)")
 

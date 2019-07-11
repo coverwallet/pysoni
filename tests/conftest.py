@@ -17,13 +17,6 @@ def pysoni_invalid_client():
                    dbname='coverwalletdwh', password='')
 
 @pytest.fixture
-def pysoni_client_connection_options():
-    return Postgre(port=os.environ.get('POSTGRES_PORT', 5432), host=os.environ.get('POSTGRES_HOST', 'localhost'),
-                   user=os.environ['POSTGRES_USER'], dbname=os.environ['POSTGRES_DB'],
-                   password=os.environ.get('POSTGRES_PASSWORD', ''),
-                   connection_options='-c statement_timeout=1')
-
-@pytest.fixture
 def pysoni_client_invalid_connection_options():
     return Postgre(port='5432', host='localhost', user='cwtest',
                    dbname='coverwalletdwh', password='',
@@ -35,6 +28,12 @@ def pysoni_client_connection_with_envvars():
                    user=os.environ['POSTGRES_USER'], dbname=os.environ['POSTGRES_DB'],
                    password=os.environ.get('POSTGRES_PASSWORD', ''),
                    connection_options='-c statement_timeout=30000')
+
+@pytest.fixture
+def pysoni_client_with_timeout(pysoni_client_connection_with_envvars):
+    pysoni_client_connection_with_envvars.db_connection.connection_options = '-c statement_timeout=1'
+    return pysoni_client_connection_with_envvars
+
 
 @pytest.fixture
 def pysoni_client_persistent_connection_with_envvars(pysoni_client_connection_with_envvars):

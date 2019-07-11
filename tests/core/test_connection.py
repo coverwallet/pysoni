@@ -16,10 +16,10 @@ def test_connection(pysoni_client, mocker):
         host='localhost', port='5432',  options='-c statement_timeout=3600000')
 
 
-def test_connection_with_connection_options(pysoni_client_connection_options, mocker):
+def test_connection_with_connection_options(pysoni_client_with_timeout, mocker):
     mocker.patch.object(psycopg2, 'connect')
 
-    pysoni_client_connection_options.connection()
+    pysoni_client_with_timeout.connection()
 
     psycopg2.connect.assert_called_once_with(
         dbname=os.environ['POSTGRES_DB'], user=os.environ['POSTGRES_USER'],
@@ -37,8 +37,8 @@ def test_invalid_connection_with_options(pysoni_client_invalid_connection_option
     with pytest.raises(psycopg2.OperationalError):
         pysoni_client_invalid_connection_options.connection()
 
-def test_timeout_connection(pysoni_client_connection_options):
+def test_timeout_connection(pysoni_client_with_timeout):
     
     with pytest.raises(psycopg2.extensions.QueryCanceledError):
-        cursor = pysoni_client_connection_options.connection().cursor()
+        cursor = pysoni_client_with_timeout.connection().cursor()
         cursor.execute('select pg_sleep(2000)')

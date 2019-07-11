@@ -37,11 +37,9 @@ def pysoni_client_connection_with_envvars():
                    connection_options='-c statement_timeout=30000')
 
 @pytest.fixture
-def pysoni_client_persistent_connection_with_envvars():
-    return Postgre(port=os.environ.get('POSTGRES_PORT', 5432), host=os.environ.get('POSTGRES_HOST', 'localhost'),
-                   user=os.environ['POSTGRES_USER'], dbname=os.environ['POSTGRES_DB'],
-                   password=os.environ.get('POSTGRES_PASSWORD', ''),
-                   connection_options='-c statement_timeout=30000', is_persistent=True)
+def pysoni_client_persistent_connection_with_envvars(pysoni_client_connection_with_envvars):
+    pysoni_client_connection_with_envvars.db_connection.is_persistent = True
+    return pysoni_client_connection_with_envvars
 
 @pytest.fixture
 def connection():

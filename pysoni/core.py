@@ -1,4 +1,5 @@
-from time import sleep, time
+from time import sleep
+from datetime import datetime
 
 from psycopg2.extras import execute_values
 from pandas import DataFrame, to_datetime, notnull
@@ -487,7 +488,7 @@ class Postgre(object):
         if not self.db_connection.is_persistent:
             raise ConnectionError("The connection must be persistent to use temporary tables")
 
-        execution_time = str(time()).replace('.', '')
+        execution_time = datetime.now().strftime("%Y%m%d%H%M%S%f")
         tmp_table = f'{tablename}_TEMP_{execution_time}'
         table_name_with_schema = f"{schema}.{tablename}"
 

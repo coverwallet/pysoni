@@ -32,3 +32,12 @@ def test_close_if_connection_is_persistent_does_not_close(open_connection):
 
     assert open_connection._is_opened
     assert open_connection._connection_handler
+
+def test_close_if_connection_is_persistent_closes_the_cursor(open_connection, mocker):
+    cursor_mock = mocker.Mock()
+    open_connection._connection_handler.cursor.return_value = cursor_mock
+    open_connection.is_persistent = True
+
+    open_connection.close()
+
+    open_connection.cursor().close.assert_called_once()

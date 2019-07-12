@@ -1,0 +1,19 @@
+db:
+    image: postgres:12
+    environment:
+        - POSTGRES_PASSWORD=pass
+        - POSTGRES_USER=cw_test
+        - POSTGRES_DB=coverwalletdwh
+tests:
+    build: .
+    command: "pytest -v --cov=pysoni /pysoni/tests"
+    volumes:
+        - .:/pysoni
+    links:
+        - db
+    environment:
+        - POSTGRES_HOST=db
+        - POSTGRES_PORT=5432
+        - POSTGRES_PASSWORD=pass
+        - POSTGRES_USER=cw_test
+        - POSTGRES_DB=coverwalletdwh

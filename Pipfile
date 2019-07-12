@@ -10,6 +10,7 @@ ipython =  "==7.5.0"
 python-dotenv = "==0.10.1"
 pytest-mock = "==1.10.4"
 ipdb = "*"
+pytest-cov = "*"
 
 [packages]
 pandas = "==0.24.2"

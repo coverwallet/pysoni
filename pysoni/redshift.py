@@ -66,7 +66,7 @@ class Redshift(Postgre):
                 f"with credentials '{self.aws_creds}' "
                 f"{' '.join(copy_options)}")
 
-    def update_redshift_table(
+    def update_table_from_s3(
             self, s3_path: str, table_name: str, tmp_table_name: str, columns: List[str] = None,
             copy_options: List[str] = None, table_schema: str = DEFAULT_SCHEMA, delete_statement: str = None,
             posthook_statement: str = None):

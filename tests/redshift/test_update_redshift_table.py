@@ -5,7 +5,7 @@ from pysoni import Postgre
 def test_update_redshift_table_raise_connection_error(pysoni_redshift_client_not_persistent_connection):
 
     with pytest.raises(ConnectionError):
-        pysoni_redshift_client_not_persistent_connection.update_redshift_table(
+        pysoni_redshift_client_not_persistent_connection.update_table_from_s3(
             s3_path='s3://mybucket/mykey', table_name='test_table', columns=['column1', 'column2'],
             copy_options=["IGNOREHEADER 1", "BLANKSASNULL", "EMPTYASNULL", "IGNOREBLANKLINES", "CSV DELIMITER '|'",
                           "TIMEFORMAT 'auto'", "TRUNCATECOLUMNS"], tmp_table_name='test_table_name',
@@ -16,7 +16,7 @@ def test_update_redshift_table_raise_connection_error(pysoni_redshift_client_not
 def test_update_redshift_table_with_pysoni_core_api(pysoni_redshift_client, mocker):
 
     mocker.patch.object(Postgre, 'postgre_statement')
-    pysoni_redshift_client.update_redshift_table(
+    pysoni_redshift_client.update_table_from_s3(
         s3_path='s3://mybucket/mykey', table_name='test_table', columns=['column1', 'column2'],
         copy_options=["IGNOREHEADER 1", "BLANKSASNULL", "EMPTYASNULL", "IGNOREBLANKLINES", "CSV DELIMITER '|'",
                       "TIMEFORMAT 'auto'", "TRUNCATECOLUMNS"], tmp_table_name='test_temp_table_name',
@@ -29,7 +29,7 @@ def test_update_redshift_table_with_pysoni_core_api(pysoni_redshift_client, mock
 def test_update_redshift_table_with_pysoni_core_api_without_delete_statement(pysoni_redshift_client, mocker):
 
     mocker.patch.object(Postgre, 'postgre_statement')
-    pysoni_redshift_client.update_redshift_table(
+    pysoni_redshift_client.update_table_from_s3(
         s3_path='s3://mybucket/mykey', table_name='test_table', columns=['column1', 'column2'],
         copy_options=["IGNOREHEADER 1", "BLANKSASNULL", "EMPTYASNULL", "IGNOREBLANKLINES", "CSV DELIMITER '|'",
                       "TIMEFORMAT 'auto'", "TRUNCATECOLUMNS"], tmp_table_name='test_temp_table_name',
@@ -41,7 +41,7 @@ def test_update_redshift_table_with_pysoni_core_api_without_delete_statement(pys
 def test_update_redshift_table_with_pysoni_core_api_without_posthook_statement(pysoni_redshift_client, mocker):
 
     mocker.patch.object(Postgre, 'postgre_statement')
-    pysoni_redshift_client.update_redshift_table(
+    pysoni_redshift_client.update_table_from_s3(
         s3_path='s3://mybucket/mykey', table_name='test_table', columns=['column1', 'column2'],
         copy_options=["IGNOREHEADER 1", "BLANKSASNULL", "EMPTYASNULL", "IGNOREBLANKLINES", "CSV DELIMITER '|'",
                       "TIMEFORMAT 'auto'", "TRUNCATECOLUMNS"], tmp_table_name='test_temp_table_name',
@@ -53,7 +53,7 @@ def test_update_redshift_table_with_pysoni_core_api_without_posthook_statement(p
 def test_update_redshift_table_with_pysoni_core_api_without_columns(pysoni_redshift_client, mocker):
 
     mocker.patch.object(Postgre, 'postgre_statement')
-    pysoni_redshift_client.update_redshift_table(
+    pysoni_redshift_client.update_table_from_s3(
         s3_path='s3://mybucket/mykey', table_name='test_table',
         copy_options=["IGNOREHEADER 1", "BLANKSASNULL", "EMPTYASNULL", "IGNOREBLANKLINES", "CSV DELIMITER '|'",
                       "TIMEFORMAT 'auto'", "TRUNCATECOLUMNS"], tmp_table_name='test_temp_table_name',
@@ -65,7 +65,7 @@ def test_update_redshift_table_with_pysoni_core_api_without_columns(pysoni_redsh
 def test_update_redshift_table_with_pysoni_core_api_without_default_statements(pysoni_redshift_client, mocker):
 
     mocker.patch.object(Postgre, 'postgre_statement')
-    pysoni_redshift_client.update_redshift_table(
+    pysoni_redshift_client.update_table_from_s3(
         s3_path='s3://mybucket/mykey', table_name='test_table',
         copy_options=["IGNOREHEADER 1", "BLANKSASNULL", "EMPTYASNULL", "IGNOREBLANKLINES", "CSV DELIMITER '|'",
                       "TIMEFORMAT 'auto'", "TRUNCATECOLUMNS"], tmp_table_name='test_temp_table_name')

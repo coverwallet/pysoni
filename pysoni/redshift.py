@@ -11,6 +11,8 @@ class Redshift(Postgre):
     can not we used over a PostgreSQL DB.
     """
 
+    DEFAULT_SCHEMA = 'public'
+
     def __init__(self, aws_access_key_id: str, aws_access_secret_key: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.aws_access_key_id = aws_access_key_id
@@ -23,7 +25,7 @@ class Redshift(Postgre):
 
     def generate_s3_to_redshift_copy_statement(
             self, s3_path: str, table_name: str, columns: List[str] = None, copy_options: List[str] = None,
-            table_schema: str = None) -> str:
+            table_schema: str = DEFAULT_SCHEMA) -> str:
         """Method to generate a valid copy statement to load data directly from s3 to Redshit.
            Docs here: https://docs.aws.amazon.com/redshift/latest/dg/r_COPY.html
 
@@ -56,15 +58,17 @@ class Redshift(Postgre):
 
         format_copy_columns = f"({','.join(columns)})" if columns else ''
         format_db_path = f"{table_schema}.{table_name}" if table_schema else table_name
-        format_copy_options = f"{' '.join(copy_options)}" if copy_options else ''
+        if not copy_options:
+            copy_options = []
+
         return (f"COPY {format_db_path} {format_copy_columns} "
                 f"FROM '{s3_path}' "
                 f"with credentials '{self.aws_creds}' "
-                f"{format_copy_options}")
+                f"{' '.join(copy_options)}")
 
     def update_redshift_table(
             self, s3_path: str, table_name: str, tmp_table_name: str, columns: List[str] = None,
-            copy_options: List[str] = None, table_schema: str = 'public', delete_statement: str = None,
+            copy_options: List[str] = None, table_schema: str = DEFAULT_SCHEMA, delete_statement: str = None,
             posthook_statement: str = None):
         """Method update a redshift db table loading data from s3. They idea of this method it is
            to provide a simple interface where multiple different update approaches can be accomplish,
@@ -129,7 +133,7 @@ class Redshift(Postgre):
 
         copy_statement = self.generate_s3_to_redshift_copy_statement(
             s3_path=s3_path, table_name=tmp_table_name, columns=columns,
-            copy_options=copy_options)
+            copy_options=copy_options, table_schema=None)
 
         db_copy_statement = f"{copy_statement};"
 

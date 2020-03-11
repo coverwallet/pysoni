@@ -128,21 +128,22 @@ class Redshift(Postgre):
         format_db_insert_columns = f"({','.join(columns)})" if columns else ''
         format_db_path = f"{table_schema}.{table_name}"
 
-        db_create_tmp_table_statement = (f"CREATE TEMP TABLE {tmp_table_name} AS "
-                                         f"(SELECT {format_db_select_columns} FROM {format_db_path} LIMIT 0);")
+        db_create_tmp_table_statement = (
+            f"CREATE TEMP TABLE {tmp_table_name} AS "
+            f"(SELECT {format_db_select_columns} FROM {format_db_path} LIMIT 0)")
 
         copy_statement = self.generate_s3_to_redshift_copy_statement(
-            s3_path=s3_path, table_name=tmp_table_name, columns=columns,
-            copy_options=copy_options, table_schema=None)
+            s3_path=s3_path, table_name=tmp_table_name,
+            columns=columns, copy_options=copy_options, table_schema=None)
 
-        db_copy_statement = f"{copy_statement};"
+        db_insert_statement = (
+            f"INSERT INTO {format_db_path}{format_db_insert_columns} "
+            f"(SELECT {format_db_select_columns} FROM {tmp_table_name})")
 
-        db_delete_statement = f"{delete_statement};" if delete_statement else ''
+        statements_to_execute = [
+            db_create_tmp_table_statement, copy_statement, delete_statement,
+            db_insert_statement, posthook_statement]
 
-        db_insert_statement = (f"INSERT INTO {format_db_path}{format_db_insert_columns}"
-                               f"(SELECT {format_db_select_columns} FROM {tmp_table_name})")
+        statement = ';'.join(filter(None, statements_to_execute))
 
-        db_posthook_statement = f";{posthook_statement}" if posthook_statement else ''
-
-        self.postgre_statement(
-            f"{db_create_tmp_table_statement}{db_copy_statement}{db_delete_statement}{db_insert_statement}{db_posthook_statement}")
+        self.postgre_statement(statement)

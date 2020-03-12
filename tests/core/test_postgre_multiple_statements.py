@@ -1,14 +1,13 @@
-import pytest 
+import pytest
 import psycopg2
 
 
-def test_postgre_multiple_statement_with_psycopg2_api(pysoni_client, mocker):
+def test_postgre_multiple_statement_with_psycopg2_api(pysoni_client_connection_with_envvars):
 
-    excepted_statements = """CREATE TABLE temp (cover text);ALTER TABLE 
-                             temp rename to temp_prod; DROP TABLE temp_prod"""
+    excepted_statements = "1"
 
-    with mocker.patch.object(psycopg2, 'connect') as mock_connection:
-        pysoni_client.postgre_multiple_statements(
-            ["CREATE TABLE temp (cover text)", "ALTER TABLE temp RENAME TO temp_prod",
-             "DROP TABLE temp_prod"])
-        mock_connection.cursor.return_value.execute.called_with(excepted_statements)
+    results = pysoni_client_connection_with_envvars.postgre_multiple_statements(
+        ["CREATE TABLE temp (cover text)", "INSERT INTO temp VALUES ('1')",
+         "ALTER TABLE temp rename to temp_1", "SELECT * FROM temp_1"])
+
+    excepted_statements == results

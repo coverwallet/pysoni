@@ -66,6 +66,39 @@ class Redshift(Postgre):
                 f"with credentials '{self.aws_creds}' "
                 f"{' '.join(copy_options)}")
 
+    def generate_redshift_to_s3_unload_statement(
+            self, query: str, s3_path: str, copy_options: List[str],
+            aws_region: str = None) -> str:
+        """Method to generate a valid unload statement to move data from AWS Redshift into S3.
+
+
+           Arguments
+           ---------
+           s3_path: str
+              Path in S3 where you want to load the data.
+           query: str
+              Query string which match the data you want to load from Redshift to S3.
+              It need to follow an specific forma (https://docs.aws.amazon.com/redshift/latest/dg/r_UNLOAD.html)
+           copy_options: list 
+              List of strings, with S3 options to choose when performaning the upload operation. 
+              (https://docs.aws.amazon.com/redshift/latest/dg/r_UNLOAD.html). This list should not 
+              contain any specification of the aws region.
+           aws_region: str
+               AWS region region where we are going to unload the file
+
+           Returns
+           -------
+           string
+             a string with the unload statement
+
+        """
+
+        return (f"UNLOAD ('{query}') "
+                f"TO '{s3_path}' "
+                f"CREDENTIALS '{self.aws_creds}' "
+                f"{' '.join(copy_options)} "
+                f"{'REGION AS {0}'.format(aws_region) if aws_region else ''}")
+
     def update_table_from_s3(
             self, s3_path: str, table_name: str, tmp_table_name: str, columns: List[str] = None,
             copy_options: List[str] = None, table_schema: str = DEFAULT_SCHEMA, delete_statement: str = None,
@@ -147,3 +180,26 @@ class Redshift(Postgre):
         statement = ';'.join(filter(None, statements_to_execute))
 
         self.postgre_statement(statement)
+
+    def unload_data_to_s3(self, query: str, s3_path: str, copy_options: List[str], aws_region: str):
+        """Method unload data from AWS Redshift to s3.
+
+
+           Arguments
+           ---------
+           s3_path: str
+              Path in S3 where you want to load the data.
+           query: str
+              Query string which match the data you want to load from Redshift to S3.
+              It need to follow an specific forma (https://docs.aws.amazon.com/redshift/latest/dg/r_UNLOAD.html)
+           copy_options: list 
+              List of strings, with S3 options to choose when performaning the upload operation. 
+              (https://docs.aws.amazon.com/redshift/latest/dg/r_UNLOAD.html). This list should not 
+              contain any specification of the aws region.
+           aws_region: str
+               AWS region region where we are going to unload the file
+        """
+        unload_statement = self.generate_redshift_to_s3_unload_statement(
+            query=query, s3_path=s3_path, copy_options=copy_options, aws_region=aws_region)
+
+        self.postgre_statement(unload_statement)

@@ -15,7 +15,6 @@ pytest-cov = "*"
 [packages]
 pandas = "==1.3.5"
 toolz = "==0.9.0"
-"psycopg2-binary" = "==2.7.5"
 
 [requires]
-python_version = "3.6"
+python_version = "3.8"

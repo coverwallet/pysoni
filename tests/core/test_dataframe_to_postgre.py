@@ -5,6 +5,7 @@ from datetime import datetime
 from dotenv import load_dotenv, find_dotenv
 from pandas import DataFrame, to_datetime
 import numpy as np
+import pandas as pd
 import sys
 
 load_dotenv(find_dotenv())
@@ -51,8 +52,7 @@ def test_dataframe_to_postgre_append_nan(pysoni_client_connection_with_envvars):
     pysoni_client_connection_with_envvars.postgre_statement(
         "TRUNCATE TABLE test_dataframe_to_postgre_append;")
 
-    print(results.get('results')[1][2])
-    assert (results.get('results')[1][2]).isnull()
+    assert pd.isna(results.get('results')[1][2])
 
 
 def test_dataframe_to_postgre_rebuild(pysoni_client_connection_with_envvars):

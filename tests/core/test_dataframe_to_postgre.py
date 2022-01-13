@@ -52,7 +52,7 @@ def test_dataframe_to_postgre_append_nan(pysoni_client_connection_with_envvars):
         "TRUNCATE TABLE test_dataframe_to_postgre_append;")
 
     print(results.get('results')[1][2])
-    assert (results.get('results')[1][2]).isnan(np.nan)
+    assert (results.get('results')[1][2]).isnull()
 
 
 def test_dataframe_to_postgre_rebuild(pysoni_client_connection_with_envvars):

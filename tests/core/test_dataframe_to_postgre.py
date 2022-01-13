@@ -51,7 +51,7 @@ def test_dataframe_to_postgre_append_nan(pysoni_client_connection_with_envvars):
     pysoni_client_connection_with_envvars.postgre_statement(
         "TRUNCATE TABLE test_dataframe_to_postgre_append;")
 
-    assert results.get('results')[1][2] is np.nan
+    assert (results.get('results')[1][2]).isnan(np.nan)
 
 
 def test_dataframe_to_postgre_rebuild(pysoni_client_connection_with_envvars):

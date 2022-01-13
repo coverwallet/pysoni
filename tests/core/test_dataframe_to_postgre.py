@@ -10,7 +10,7 @@ import sys
 load_dotenv(find_dotenv())
 
 df = DataFrame(columns=["id", "name", "quantity"], 
-    data=[[245, 'Peter', 31.2], [541, 'Lucas', None]])
+    data=[[245, 'Peter', 31.2], [541, 'Lucas', np.nan]])
 
 df1 = DataFrame(columns=["id", "name", "quantity"], 
     data=[[245, 'Will', 47.3]])
@@ -25,7 +25,7 @@ def test_dataframe_to_postgre_append(pysoni_client_connection_with_envvars):
         tablename="test_dataframe_to_postgre_append", dataframe_object=df, method='append',
         batch_size=1)
 
-    expected_results = {'results': [(245, 'Peter', 31.2), (541, 'Lucas', None)],
+    expected_results = {'results': [(245, 'Peter', 31.2), (541, 'Lucas', np.nan)],
         'keys': ['id', 'name', 'quantity']}
     results = pysoni_client_connection_with_envvars.execute_query(
         "SELECT * FROM test_dataframe_to_postgre_append")
@@ -50,7 +50,7 @@ def test_dataframe_to_postgre_rebuild(pysoni_client_connection_with_envvars):
         tablename="test_dataframe_to_postgre_rebuild", dataframe_object=df1,
         method='rebuild', merge_key='id', batch_size=1)
     
-    expected_results = {'results': [(541, 'Lucas', None), (245, 'Will', 47.3)],
+    expected_results = {'results': [(541, 'Lucas', np.nan), (245, 'Will', 47.3)],
         'keys': ['id', 'name', 'quantity']}
     results = pysoni_client_connection_with_envvars.execute_query(
         "SELECT * FROM test_dataframe_to_postgre_rebuild")

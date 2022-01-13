@@ -10,7 +10,7 @@ import sys
 load_dotenv(find_dotenv())
 
 df = DataFrame(columns=["id", "name", "quantity"], 
-    data=[[245, 'Peter', 31.2], [541, 'Lucas', np.nan]])
+    data=[[245, 'Peter', 31.2], [541, 'Lucas', None]])
 
 df1 = DataFrame(columns=["id", "name", "quantity"], 
     data=[[245, 'Will', 47.3]])

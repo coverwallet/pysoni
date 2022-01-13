@@ -78,6 +78,27 @@ def test_dataframe_to_postgre_rebuild(pysoni_client_connection_with_envvars):
 
     assert expected_results == results
 
+def test_dataframe_to_postgre_rebuild_nan(pysoni_client_connection_with_envvars):
+    pysoni_client_connection_with_envvars.postgre_statement(
+        "CREATE TABLE IF NOT EXISTS test_dataframe_to_postgre_rebuild \
+        (id INT, name VARCHAR(50), quantity float8);")
+
+    pysoni_client_connection_with_envvars.dataframe_to_postgre(
+        tablename="test_dataframe_to_postgre_rebuild", dataframe_object=df2,
+        method='append', batch_size=1)
+
+    pysoni_client_connection_with_envvars.dataframe_to_postgre(
+        tablename="test_dataframe_to_postgre_rebuild", dataframe_object=df1,
+        method='rebuild', merge_key='id', batch_size=1)
+
+    results = pysoni_client_connection_with_envvars.execute_query(
+        "SELECT * FROM test_dataframe_to_postgre_rebuild")
+
+    pysoni_client_connection_with_envvars.postgre_statement(
+        "TRUNCATE TABLE test_dataframe_to_postgre_rebuild;")
+
+    assert pd.isna(results.get('results')[0][2])
+
 
 def test_dataframe_to_postgre_with_invalid_method(
         pysoni_client_connection_with_envvars):

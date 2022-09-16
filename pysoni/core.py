@@ -466,7 +466,7 @@ class Postgre(object):
         ---------
         tablename: string
             Name of the table that will be updated
-        merge_key: string (optional)
+        merge_key: string or List (optional)
             Column used to make an inner join to delete rows that will be updated.
             If it is not specified, only an insert operation from the temporary
             table is done
@@ -502,9 +502,20 @@ class Postgre(object):
             sql_statements.append(f"TRUNCATE TABLE {table_name_with_schema}")
 
         if merge_key:
+            if isinstance(merge_key, list):
+                merge_statements = []
+                for key_part in merge_key:
+                    merge_statements.append(
+                        f"{table_name_with_schema}.{key_part}={tmp_table}.{key_part}"
+                    )
+                merge_string = " AND ".join(merge_statements)
+            else:
+                merge_string = f"{table_name_with_schema}.{merge_key}={tmp_table}.{merge_key}"
+
             sql_statements.append(
                 f"DELETE FROM {table_name_with_schema} USING {tmp_table} "
-                f"WHERE {table_name_with_schema}.{merge_key}={tmp_table}.{merge_key};")
+                f"WHERE {merge_string};"
+            )
 
         # Table truncation, batch delete and insert happens in one single transaction
         sql_statements.append(f"INSERT INTO {table_name_with_schema} (SELECT * FROM {tmp_table})")

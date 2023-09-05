@@ -13,9 +13,9 @@ ipdb = "*"
 pytest-cov = "*"
 
 [packages]
-pandas = "==1.3.5"
 toolz = "==0.9.0"
 psycopg2-binary = "==2.9.3"
+pandas = "==2.0.3"
 
 [requires]
 python_version = "3.8"

@@ -1,4 +1,4 @@
-# Pysoni.
+# Pysoni. 
 ##### Introduction and basic usage. 
 Pysoni it is a flexible library that offers short cuts for the most common operations and transactions that a Data Scientist or a Data Engineer could do over a psql database.
 

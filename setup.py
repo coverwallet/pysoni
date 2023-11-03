@@ -11,6 +11,6 @@ setup(name='pysoni',
       packages=['pysoni'],
       install_requires=[
           'psycopg2-binary',
-          'pandas==1.5.*',
+          'pandas==2.0.*',
           'toolz',
       ])
